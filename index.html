@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finanzas del Hogar · SQLite</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<title>Finanzas del Hogar · Supabase</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#f2f4f3;
@@ -102,6 +102,10 @@
   .admin-block ul{list-style:none; padding:0; margin:0 0 12px; max-height:180px; overflow:auto;}
   .admin-block li{display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:.82rem;}
   .empty-state{text-align:center; padding:30px 10px; color:var(--ink-soft); font-size:.85rem;}
+  .estado-conexion{display:inline-flex; align-items:center; gap:6px;}
+  .punto{width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--ink-soft);}
+  .punto.ok{background:var(--green);}
+  .punto.error{background:var(--red);}
 </style>
 </head>
 <body>
@@ -111,25 +115,11 @@
   <div class="header">
     <div>
       <h1>Finanzas del Hogar</h1>
-      <div class="sub" id="estadoGuardado">Iniciando base de datos…</div>
+      <div class="sub estado-conexion"><span class="punto" id="puntoConexion"></span><span id="estadoConexion">Conectando con Supabase…</span></div>
     </div>
-    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
-      <button class="btn secondary" id="btnVincular" style="width:auto;" onclick="mostrarOpcionesVinculo()">🔗 Vincular archivo en mi PC</button>
-      <label class="btn secondary" style="width:auto; margin:0;">
-        ⬆️ Importar copia
-        <input type="file" id="uploadDB" accept=".sqlite,.db" onchange="importarBaseDatos(event)" style="display:none;">
-      </label>
-      <button class="btn" onclick="descargarBaseDatos()" style="width:auto;">⬇️ Exportar copia</button>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn secondary" style="width:auto;" onclick="cargarTodo()">🔄 Actualizar</button>
     </div>
-  </div>
-  <div id="avisoReconectar" class="hidden" style="background:var(--amber-soft); border:1px solid var(--amber); color:var(--ink); padding:10px 14px; border-radius:8px; margin-bottom:16px; font-size:.85rem; display:flex; justify-content:space-between; align-items:center; gap:10px;">
-    <span>El navegador necesita que confirmes de nuevo el acceso al archivo local vinculado.</span>
-    <button class="btn small secondary" style="width:auto;" onclick="reconectarPermiso()">Reconectar</button>
-  </div>
-  <div id="menuVinculo" class="hidden" style="background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 16px; margin-bottom:16px; display:flex; gap:10px; flex-wrap:wrap; align-items:center; box-shadow:var(--shadow);">
-    <span class="hint" style="margin:0;">Elegí una opción:</span>
-    <button class="btn small secondary" style="width:auto;" onclick="vincularExistente()">📂 Usar un .sqlite que ya tengo</button>
-    <button class="btn small secondary" style="width:auto;" onclick="vincularNuevo()">✨ Crear archivo nuevo en mi PC</button>
   </div>
 
   <div class="top-bar">
@@ -145,15 +135,15 @@
       <label for="filtroMes">Mes</label>
       <select id="filtroMes" onchange="cargarMovimientos()">
         <option value="TODOS">Todos</option>
-        <option value="01">Enero</option>
-        <option value="02">Febrero</option>
-        <option value="03">Marzo</option>
-        <option value="04">Abril</option>
-        <option value="05">Mayo</option>
-        <option value="06">Junio</option>
-        <option value="07">Julio</option>
-        <option value="08">Agosto</option>
-        <option value="09">Septiembre</option>
+        <option value="1">Enero</option>
+        <option value="2">Febrero</option>
+        <option value="3">Marzo</option>
+        <option value="4">Abril</option>
+        <option value="5">Mayo</option>
+        <option value="6">Junio</option>
+        <option value="7">Julio</option>
+        <option value="8">Agosto</option>
+        <option value="9">Septiembre</option>
         <option value="10">Octubre</option>
         <option value="11">Noviembre</option>
         <option value="12">Diciembre</option>
@@ -181,7 +171,6 @@
       </select>
     </div>
   </div>
-
 
   <div class="dashboard" id="dashboard"></div>
 
@@ -254,7 +243,7 @@
         <div id="campoMesesServicio" class="form-group hidden">
           <label for="mesesServicio">Meses a generar por adelantado</label>
           <input type="number" id="mesesServicio" min="1" value="1">
-          <div class="hint">Al marcar un vencimiento como pagado/cobrado, el sistema genera automáticamente el del mes siguiente como <strong>pendiente</strong>, para que nunca se te pierda el recordatorio. Vas a poder "suspender" un mes puntual sin cortar la recurrencia. No hace falta cargar muchos meses por adelantado.</div>
+          <div class="hint">Al marcar un vencimiento como pagado/cobrado, el sistema genera automáticamente el del mes siguiente como <strong>pendiente</strong>. Vas a poder "suspender" un mes puntual sin cortar la recurrencia.</div>
         </div>
 
         <div id="campoEstadoInicial" class="form-group">
@@ -307,7 +296,7 @@
         </thead>
         <tbody id="tablaDeudas"></tbody>
       </table>
-      <div id="deudaEmpty" class="empty-state hidden">No hay deudas pendientes. 🎉</div>
+      <div id="deudaEmpty" class="empty-state hidden">No hay pendientes. 🎉</div>
     </div>
   </div>
 
@@ -368,311 +357,40 @@
 </div>
 
 <script>
-let db;
-let fileHandle = null;     // FileSystemFileHandle si el usuario vinculó un archivo real en su PC
-let pendingHandle = null;  // handle guardado que perdió el permiso y espera reconexión
-const config = { locateFile: filename => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${filename}` };
+/* =========================================================================
+   CONEXIÓN A SUPABASE
+   Reemplazá estos dos valores por los de tu proyecto:
+   Supabase → Settings → API → "Project URL" y "anon public" key.
+   ========================================================================= */
+const SUPABASE_URL = 'https://vpppbksvcsjbgnbdbowv.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_h70CBZApaWN-N7hE0q8AWQ_idPFhXw2';
 
-// ---------- ALMACENAMIENTO AUTOMÁTICO (IndexedDB) ----------
-// El sistema queda "asignado" a una única base: se guarda sola en el navegador
-// después de cada cambio, y si no existe ninguna, se crea una vacía con las tablas.
-const IDB_NAME = 'finanzas_hogar_idb';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function abrirIDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(IDB_NAME, 1);
-    req.onupgradeneeded = () => {
-      const d = req.result;
-      if (!d.objectStoreNames.contains('archivo')) d.createObjectStore('archivo');
-      if (!d.objectStoreNames.contains('handle')) d.createObjectStore('handle');
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function leerBinarioGuardado() {
-  try {
-    const idb = await abrirIDB();
-    return await new Promise((resolve, reject) => {
-      const tx = idb.transaction('archivo', 'readonly');
-      const req = tx.objectStore('archivo').get('principal');
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => reject(req.error);
-    });
-  } catch (e) { return null; }
-}
-
-async function guardarBinario(uint8) {
-  const idb = await abrirIDB();
-  return new Promise((resolve, reject) => {
-    const tx = idb.transaction('archivo', 'readwrite');
-    tx.objectStore('archivo').put(uint8, 'principal');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-async function leerHandleGuardado() {
-  try {
-    const idb = await abrirIDB();
-    return await new Promise((resolve) => {
-      const tx = idb.transaction('handle', 'readonly');
-      const req = tx.objectStore('handle').get('principal');
-      req.onsuccess = () => resolve(req.result || null);
-      req.onerror = () => resolve(null);
-    });
-  } catch (e) { return null; }
-}
-
-async function guardarHandleEnIDB(handle) {
-  const idb = await abrirIDB();
-  return new Promise((resolve, reject) => {
-    const tx = idb.transaction('handle', 'readwrite');
-    tx.objectStore('handle').put(handle, 'principal');
-    tx.oncomplete = () => resolve();
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-// Guarda el estado actual de la base: siempre en el navegador, y además
-// en el archivo real de la PC si hay uno vinculado.
-async function persistirTodo() {
-  if (!db) return;
-  try {
-    const data = db.export();
-    await guardarBinario(data);
-    if (fileHandle) {
-      const permiso = await fileHandle.queryPermission({ mode: 'readwrite' });
-      if (permiso === 'granted') {
-        const writable = await fileHandle.createWritable();
-        await writable.write(data);
-        await writable.close();
-      }
-    }
-  } catch (err) {
-    console.error('No se pudo guardar automáticamente:', err);
-  }
-  actualizarEstadoGuardado();
-}
-
-function actualizarEstadoGuardado() {
-  const el = document.getElementById('estadoGuardado');
-  if (!el) return;
-  const hora = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-  el.textContent = fileHandle
-    ? `🔗 Vinculado a "${fileHandle.name}" · guardado ${hora}`
-    : `🟢 Guardado automáticamente en este navegador · ${hora}`;
-}
-
-// ---------- VÍNCULO CON UN ARCHIVO REAL DE LA PC (opcional) ----------
-function mostrarOpcionesVinculo() {
-  document.getElementById('menuVinculo').classList.toggle('hidden');
-}
-
-async function vincularExistente() {
-  try {
-    const [handle] = await window.showOpenFilePicker({
-      types: [{ description: 'Base de datos SQLite', accept: { 'application/octet-stream': ['.sqlite', '.db'] } }]
-    });
-    const permiso = await handle.requestPermission({ mode: 'readwrite' });
-    if (permiso !== 'granted') { alert('No se otorgó permiso de lectura/escritura.'); return; }
-    const file = await handle.getFile();
-    fileHandle = handle;
-    await guardarHandleEnIDB(handle);
-    if (file.size > 0) {
-      const datos = new Uint8Array(await file.arrayBuffer());
-      await initSQLite(datos);
-    } else {
-      await persistirTodo();
-    }
-    document.getElementById('menuVinculo').classList.add('hidden');
-    document.getElementById('avisoReconectar').classList.add('hidden');
-  } catch (err) { if (err.name !== 'AbortError') alert('No se pudo vincular el archivo: ' + err.message); }
-}
-
-async function vincularNuevo() {
-  try {
-    const handle = await window.showSaveFilePicker({
-      suggestedName: 'gastos_hogar.sqlite',
-      types: [{ description: 'Base de datos SQLite', accept: { 'application/octet-stream': ['.sqlite', '.db'] } }]
-    });
-    fileHandle = handle;
-    await guardarHandleEnIDB(handle);
-    await persistirTodo();
-    document.getElementById('menuVinculo').classList.add('hidden');
-    document.getElementById('avisoReconectar').classList.add('hidden');
-    alert('Listo. A partir de ahora cada cambio se guarda también en ese archivo de tu PC.');
-  } catch (err) { if (err.name !== 'AbortError') alert('No se pudo crear el archivo: ' + err.message); }
-}
-
-async function reconectarPermiso() {
-  if (!pendingHandle) return;
-  try {
-    const permiso = await pendingHandle.requestPermission({ mode: 'readwrite' });
-    if (permiso === 'granted') {
-      fileHandle = pendingHandle;
-      document.getElementById('avisoReconectar').classList.add('hidden');
-      await persistirTodo();
-    }
-  } catch (err) { alert('No se pudo reconectar: ' + err.message); }
-}
-
-// ---------- ARRANQUE ----------
 window.onload = async function () {
   establecerFechaActual();
-  document.getElementById('btnVincular').classList.toggle('hidden', typeof window.showSaveFilePicker !== 'function');
-
-  let datosIniciales = null;
-
-  // 1) ¿Hay un archivo real vinculado de una sesión anterior?
-  try {
-    const handleGuardado = await leerHandleGuardado();
-    if (handleGuardado) {
-      const permiso = await handleGuardado.queryPermission({ mode: 'readwrite' });
-      if (permiso === 'granted') {
-        fileHandle = handleGuardado;
-        const file = await fileHandle.getFile();
-        if (file.size > 0) datosIniciales = new Uint8Array(await file.arrayBuffer());
-      } else {
-        pendingHandle = handleGuardado;
-        document.getElementById('avisoReconectar').classList.remove('hidden');
-      }
-    }
-  } catch (err) { /* sin handle previo o navegador sin soporte */ }
-
-  // 2) Si no hay archivo vinculado, usar la copia guardada automáticamente en el navegador
-  if (!datosIniciales) datosIniciales = await leerBinarioGuardado();
-
-  // 3) Si tampoco hay nada, initSQLite crea una base vacía nueva con sus tablas
-  await initSQLite(datosIniciales);
+  await verificarConexion();
+  await cargarTodo();
 };
 
-// ---------- INICIALIZACIÓN DEL MOTOR SQLite ----------
-async function initSQLite(existingUint8Array = null) {
-  return initSqlJs(config).then(async function (SQL) {
-    const esNueva = !existingUint8Array;
-    if (existingUint8Array) {
-      db = new SQL.Database(existingUint8Array);
-      asegurarEsquema();
-    } else {
-      db = new SQL.Database();
-      crearTablasRelacionales();
-      insertarDatosMaestrosIniciales();
-    }
-    poblarSelectoresEstructurales();
-    filtrarCategoriasPorTipo();
-    cargarMovimientos();
-    if (esNueva) await persistirTodo(); // crea el registro inicial en el almacenamiento automático
-    else actualizarEstadoGuardado();
-  }).catch(function (err) {
-    alert('No se pudo cargar el motor SQLite (sql.js). Verificá tu conexión a internet.\n' + err);
-  });
+async function verificarConexion() {
+  const punto = document.getElementById('puntoConexion');
+  const texto = document.getElementById('estadoConexion');
+  const { error } = await supabase.from('ejercicios').select('id_ejercicio').limit(1);
+  if (error) {
+    punto.className = 'punto error';
+    texto.textContent = 'Sin conexión a Supabase: revisá SUPABASE_URL / SUPABASE_ANON_KEY';
+    console.error(error);
+  } else {
+    punto.className = 'punto ok';
+    texto.textContent = 'Conectado a Supabase';
+  }
 }
 
-function crearTablasRelacionales() {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS ejercicios (
-      id_ejercicio TEXT PRIMARY KEY
-    );
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id_usuario INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
-      apellido TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS categorias (
-      id_categoria INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL UNIQUE,
-      tipo TEXT NOT NULL DEFAULT 'Ambos' CHECK(tipo IN ('Ingreso','Egreso','Ambos'))
-    );
-    CREATE TABLE IF NOT EXISTS monedas (
-      codigo TEXT PRIMARY KEY,
-      simbolo TEXT NOT NULL
-    );
-    CREATE TABLE IF NOT EXISTS movimientos (
-      id_movimiento INTEGER PRIMARY KEY AUTOINCREMENT,
-      id_ejercicio TEXT,
-      id_usuario INTEGER,
-      tipo TEXT CHECK(tipo IN ('Ingreso','Egreso')),
-      fecha_hora TEXT NOT NULL,
-      concepto TEXT NOT NULL,
-      id_categoria INTEGER,
-      codigo_moneda TEXT,
-      monto REAL NOT NULL,
-      descripcion TEXT,
-      recurrente TEXT NOT NULL DEFAULT 'No' CHECK(recurrente IN ('No','Servicio','Credito')),
-      id_grupo TEXT,
-      cuota_actual INTEGER,
-      cuota_total INTEGER,
-      estado TEXT NOT NULL DEFAULT 'Pagado' CHECK(estado IN ('Pagado','Pendiente','Suspendido')),
-      FOREIGN KEY(id_ejercicio) REFERENCES ejercicios(id_ejercicio),
-      FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),
-      FOREIGN KEY(id_categoria) REFERENCES categorias(id_categoria),
-      FOREIGN KEY(codigo_moneda) REFERENCES monedas(codigo)
-    );
-  `);
-}
-
-// Por si se importa una base vieja sin las columnas/valores nuevos
-function asegurarEsquema() {
-  crearTablasRelacionales();
-  const cols = db.exec("PRAGMA table_info(movimientos)")[0].values.map(r => r[1]);
-  const agregar = (col, defSql) => { if (!cols.includes(col)) db.run(`ALTER TABLE movimientos ADD COLUMN ${defSql}`); };
-  agregar('id_grupo', "id_grupo TEXT");
-  agregar('cuota_actual', "cuota_actual INTEGER");
-  agregar('cuota_total', "cuota_total INTEGER");
-  agregar('estado', "estado TEXT NOT NULL DEFAULT 'Pagado'");
-  migrarEstadoSuspendido();
-}
-
-// Las bases creadas antes de la función "Suspender" tienen un CHECK que no
-// permite el valor 'Suspendido'. Reconstruimos la tabla con el CHECK actualizado
-// conservando todos los datos existentes.
-function migrarEstadoSuspendido() {
-  const res = db.exec("SELECT sql FROM sqlite_master WHERE type='table' AND name='movimientos';");
-  const sqlActual = res && res[0] ? res[0].values[0][0] : '';
-  if (!sqlActual || sqlActual.includes('Suspendido')) return; // ya está al día
-
-  db.run(`
-    ALTER TABLE movimientos RENAME TO movimientos_viejo;
-
-    CREATE TABLE movimientos (
-      id_movimiento INTEGER PRIMARY KEY AUTOINCREMENT,
-      id_ejercicio TEXT,
-      id_usuario INTEGER,
-      tipo TEXT CHECK(tipo IN ('Ingreso','Egreso')),
-      fecha_hora TEXT NOT NULL,
-      concepto TEXT NOT NULL,
-      id_categoria INTEGER,
-      codigo_moneda TEXT,
-      monto REAL NOT NULL,
-      descripcion TEXT,
-      recurrente TEXT NOT NULL DEFAULT 'No' CHECK(recurrente IN ('No','Servicio','Credito')),
-      id_grupo TEXT,
-      cuota_actual INTEGER,
-      cuota_total INTEGER,
-      estado TEXT NOT NULL DEFAULT 'Pagado' CHECK(estado IN ('Pagado','Pendiente','Suspendido')),
-      FOREIGN KEY(id_ejercicio) REFERENCES ejercicios(id_ejercicio),
-      FOREIGN KEY(id_usuario) REFERENCES usuarios(id_usuario),
-      FOREIGN KEY(id_categoria) REFERENCES categorias(id_categoria),
-      FOREIGN KEY(codigo_moneda) REFERENCES monedas(codigo)
-    );
-
-    INSERT INTO movimientos (id_movimiento, id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda, monto, descripcion, recurrente, id_grupo, cuota_actual, cuota_total, estado)
-    SELECT id_movimiento, id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda, monto, descripcion, recurrente, id_grupo, cuota_actual, cuota_total, estado FROM movimientos_viejo;
-
-    DROP TABLE movimientos_viejo;
-  `);
-}
-
-function insertarDatosMaestrosIniciales() {
-  db.run("INSERT INTO ejercicios VALUES ('Ejercicio 2026'), ('Ejercicio 2027');");
-  db.run("INSERT INTO usuarios (nombre, apellido) VALUES ('Juan', 'Pérez'), ('María', 'Gómez');");
-  db.run(`INSERT INTO categorias (nombre, tipo) VALUES
-    ('Vivienda','Egreso'), ('Servicios Públicos','Egreso'), ('Alimentación','Egreso'),
-    ('Tarjetas / Créditos','Egreso'), ('Otros gastos','Egreso'),
-    ('Sueldo','Ingreso'), ('Otros ingresos','Ingreso');`);
-  db.run("INSERT INTO monedas VALUES ('ARS','$'), ('USD','u$s');");
+async function cargarTodo() {
+  await poblarSelectoresEstructurales();
+  await filtrarCategoriasPorTipo();
+  await cargarMovimientos();
 }
 
 function establecerFechaActual() {
@@ -696,58 +414,67 @@ function toggleCamposRecurrencia() {
   document.getElementById('campoEstadoInicial').classList.toggle('hidden', val === 'No');
 }
 
-function filtrarCategoriasPorTipo() {
+async function filtrarCategoriasPorTipo() {
   const tipo = document.getElementById('tipo').value;
   const select = document.getElementById('categoria');
-  const query = `SELECT id_categoria, nombre FROM categorias WHERE tipo = ? OR tipo = 'Ambos' ORDER BY nombre`;
-  const stmt = db.prepare(query);
-  stmt.bind([tipo]);
+  const { data, error } = await supabase
+    .from('categorias')
+    .select('id_categoria, nombre, tipo')
+    .order('nombre');
   select.innerHTML = '';
-  while (stmt.step()) {
-    const r = stmt.getAsObject();
-    select.add(new Option(r.nombre, r.id_categoria));
-  }
-  stmt.free();
+  if (error) { console.error(error); return; }
+  data.filter(c => c.tipo === tipo || c.tipo === 'Ambos')
+      .forEach(c => select.add(new Option(c.nombre, c.id_categoria)));
 }
 
 // ---------- SELECTORES ESTRUCTURALES ----------
-function poblarSelectoresEstructurales() {
-  const mapear = (query, elementId, placeholder) => {
+async function poblarSelectoresEstructurales() {
+  const setOptions = (elementId, items, placeholder) => {
     const select = document.getElementById(elementId);
+    const valorPrevio = select.value;
     select.innerHTML = '';
     if (placeholder) select.add(new Option(placeholder.label, placeholder.value));
-    const res = db.exec(query)[0];
-    if (res) res.values.forEach(row => select.add(new Option(row[1], row[0])));
+    items.forEach(([value, label]) => select.add(new Option(label, value)));
+    if ([...select.options].some(o => o.value === valorPrevio)) select.value = valorPrevio;
   };
 
-  mapear("SELECT id_ejercicio, id_ejercicio FROM ejercicios ORDER BY id_ejercicio", "filtroEjercicio");
-  mapear("SELECT id_usuario, nombre || ' ' || apellido FROM usuarios ORDER BY nombre", "filtroUsuario");
-  mapear("SELECT codigo, codigo || ' (' || simbolo || ')' FROM monedas ORDER BY codigo", "moneda");
-  mapear("SELECT codigo, codigo || ' (' || simbolo || ')' FROM monedas ORDER BY codigo", "filtroMoneda", { value: 'TODAS', label: 'Todas' });
-  mapear("SELECT id_categoria, nombre FROM categorias ORDER BY nombre", "filtroCategoria", { value: 'TODAS', label: 'Todas' });
+  const [ejercicios, usuarios, categorias, monedas] = await Promise.all([
+    supabase.from('ejercicios').select('id_ejercicio').order('id_ejercicio'),
+    supabase.from('usuarios').select('id_usuario, nombre, apellido').order('nombre'),
+    supabase.from('categorias').select('id_categoria, nombre').order('nombre'),
+    supabase.from('monedas').select('codigo, simbolo').order('codigo'),
+  ]);
+
+  if (ejercicios.error || usuarios.error || categorias.error || monedas.error) {
+    console.error(ejercicios.error || usuarios.error || categorias.error || monedas.error);
+    return;
+  }
+
+  setOptions('filtroEjercicio', ejercicios.data.map(e => [e.id_ejercicio, e.id_ejercicio]));
+  setOptions('filtroUsuario', usuarios.data.map(u => [u.id_usuario, `${u.nombre} ${u.apellido}`]));
+  setOptions('filtroCategoria', categorias.data.map(c => [c.id_categoria, c.nombre]), { value: 'TODAS', label: 'Todas' });
+  setOptions('moneda', monedas.data.map(m => [m.codigo, `${m.codigo} (${m.simbolo})`]));
+  setOptions('filtroMoneda', monedas.data.map(m => [m.codigo, `${m.codigo} (${m.simbolo})`]), { value: 'TODAS', label: 'Todas' });
 
   establecerMesActualEnFiltro();
 }
 
-// Por defecto arranca mostrando el mes actual, pero solo la primera vez que se
-// cargan los selectores; si el usuario ya eligió "Todos" u otro mes, se respeta.
 let mesFiltroInicializado = false;
 function establecerMesActualEnFiltro() {
   if (mesFiltroInicializado) return;
   mesFiltroInicializado = true;
-  const mesActual = String(new Date().getMonth() + 1).padStart(2, '0');
   const select = document.getElementById('filtroMes');
-  if (select) select.value = mesActual;
+  if (select) select.value = String(new Date().getMonth() + 1);
 }
 
 // ---------- INSERTAR MOVIMIENTO ----------
-function insertarMovimiento(e) {
+async function insertarMovimiento(e) {
   e.preventDefault();
 
   const tipo = document.getElementById('tipo').value;
   const fechaHora = document.getElementById('fechaHora').value;
   const concepto = document.getElementById('concepto').value.trim();
-  const categoria = document.getElementById('categoria').value;
+  const categoria = parseInt(document.getElementById('categoria').value);
   const moneda = document.getElementById('moneda').value;
   const monto = parseFloat(document.getElementById('monto').value);
   const descripcion = document.getElementById('descripcion').value.trim();
@@ -760,131 +487,124 @@ function insertarMovimiento(e) {
     alert('Elegí un ejercicio contable y un usuario en la barra superior antes de registrar el movimiento.');
     return;
   }
-
   if (recurrente === 'Credito' && tipo === 'Ingreso') {
     alert('El "Crédito en cuotas" es solo para egresos. Para un ingreso recurrente (como un sueldo), elegí "Recurrente mensual".');
     return;
   }
 
-  const insertSQL = `INSERT INTO movimientos
-    (id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda, monto, descripcion, recurrente, id_grupo, cuota_actual, cuota_total, estado)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`;
+  const base = {
+    id_ejercicio: ejercicio, id_usuario: usuarioId, tipo, concepto,
+    id_categoria: categoria, codigo_moneda: moneda, monto, descripcion,
+  };
 
   if (recurrente === 'Credito') {
     const totalCuotas = parseInt(document.getElementById('totalCuotas').value) || 2;
     const idGrupo = 'CR-' + Date.now();
+    const filas = [];
     let fechaBase = new Date(fechaHora);
-
     for (let i = 1; i <= totalCuotas; i++) {
       if (i > 1) fechaBase.setMonth(fechaBase.getMonth() + 1);
-      const iso = new Date(fechaBase.getTime() - fechaBase.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      const estado = i === 1 ? estadoInicial : 'Pendiente';
-      db.run(insertSQL, [ejercicio, usuarioId, tipo, iso.replace('T', ' '), concepto, categoria, moneda, monto, descripcion, recurrente, idGrupo, i, totalCuotas, estado]);
+      filas.push({
+        ...base, fecha_hora: isoLocal(fechaBase), recurrente, id_grupo: idGrupo,
+        cuota_actual: i, cuota_total: totalCuotas, estado: i === 1 ? estadoInicial : 'Pendiente',
+      });
     }
+    const { error } = await supabase.from('movimientos').insert(filas);
+    if (error) { alert('Error al guardar: ' + error.message); return; }
+
   } else if (recurrente === 'Servicio') {
     const meses = parseInt(document.getElementById('mesesServicio').value) || 1;
     const idGrupo = 'SV-' + Date.now();
+    const filas = [];
     let fechaBase = new Date(fechaHora);
-    let ultimoIdInsertado = null;
-    let ultimoEstado = null;
-
     for (let i = 1; i <= meses; i++) {
       if (i > 1) fechaBase.setMonth(fechaBase.getMonth() + 1);
-      const iso = new Date(fechaBase.getTime() - fechaBase.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      const estado = i === 1 ? estadoInicial : 'Pendiente';
-      // cuota_total = null: un servicio fijo es indefinido, se va renovando solo cada vez que se paga
-      db.run(insertSQL, [ejercicio, usuarioId, tipo, iso.replace('T', ' '), concepto, categoria, moneda, monto, descripcion, recurrente, idGrupo, i, null, estado]);
-      ultimoIdInsertado = db.exec("SELECT last_insert_rowid();")[0].values[0][0];
-      ultimoEstado = estado;
+      filas.push({
+        ...base, fecha_hora: isoLocal(fechaBase), recurrente, id_grupo: idGrupo,
+        cuota_actual: i, cuota_total: null, estado: i === 1 ? estadoInicial : 'Pendiente',
+      });
     }
-    // Si el último vencimiento generado ya quedó "Pagado" (por ejemplo, cargaste el
-    // servicio directamente como pagado), generamos ya mismo el recordatorio del mes siguiente.
-    if (ultimoEstado === 'Pagado') generarProximoRecordatorioSiCorresponde(ultimoIdInsertado);
+    const { data, error } = await supabase.from('movimientos').insert(filas).select();
+    if (error) { alert('Error al guardar: ' + error.message); return; }
+    const ultima = data[data.length - 1];
+    if (ultima.estado === 'Pagado') await generarProximoRecordatorioSiCorresponde(ultima.id_movimiento);
+
   } else {
-    db.run(insertSQL, [ejercicio, usuarioId, tipo, fechaHora.replace('T', ' '), concepto, categoria, moneda, monto, descripcion, recurrente, null, null, null, 'Pagado']);
+    const { error } = await supabase.from('movimientos').insert([{ ...base, fecha_hora: fechaHora, recurrente: 'No', estado: 'Pagado' }]);
+    if (error) { alert('Error al guardar: ' + error.message); return; }
   }
 
   document.getElementById('formMovimiento').reset();
   establecerFechaActual();
-  filtrarCategoriasPorTipo();
+  await filtrarCategoriasPorTipo();
   toggleCamposRecurrencia();
-  cargarMovimientos();
-  persistirTodo();
+  await cargarMovimientos();
 }
 
-function eliminarMovimiento(id) {
-  if (confirm('¿Eliminar este registro de la base de datos?')) {
-    db.run('DELETE FROM movimientos WHERE id_movimiento = ?', [id]);
-    cargarMovimientos();
-    cargarDeudas();
-    persistirTodo();
-  }
+// Convierte un objeto Date a 'YYYY-MM-DD HH:MM' en hora local (sin desfasar por UTC)
+function isoLocal(fecha) {
+  const f = new Date(fecha.getTime() - fecha.getTimezoneOffset() * 60000);
+  return f.toISOString().slice(0, 16).replace('T', ' ');
 }
 
-function marcarComoPagado(id) {
-  const stmt = db.prepare('SELECT monto, tipo, concepto, codigo_moneda FROM movimientos WHERE id_movimiento = ?');
-  stmt.bind([id]);
-  if (!stmt.step()) { stmt.free(); return; }
-  const row = stmt.getAsObject();
-  stmt.free();
+async function eliminarMovimiento(id) {
+  if (!confirm('¿Eliminar este registro de la base de datos?')) return;
+  const { error } = await supabase.from('movimientos').delete().eq('id_movimiento', id);
+  if (error) { alert('Error al borrar: ' + error.message); return; }
+  await cargarMovimientos();
+}
+
+async function marcarComoPagado(id) {
+  const { data: row, error: e1 } = await supabase
+    .from('movimientos').select('monto, tipo, concepto, codigo_moneda')
+    .eq('id_movimiento', id).single();
+  if (e1) { alert('Error: ' + e1.message); return; }
 
   const accion = row.tipo === 'Ingreso' ? 'cobrar' : 'pagar';
   const ingresado = prompt(`Monto a ${accion} de "${row.concepto}" (${row.codigo_moneda}).\nSi cambió por algún ajuste, corregilo acá:`, row.monto);
-  if (ingresado === null) return; // canceló, no se modifica nada
-
+  if (ingresado === null) return;
   const nuevoMonto = parseFloat(String(ingresado).replace(',', '.'));
   if (isNaN(nuevoMonto) || nuevoMonto <= 0) { alert('Ingresá un monto válido mayor a 0.'); return; }
 
-  db.run("UPDATE movimientos SET estado = 'Pagado', monto = ? WHERE id_movimiento = ?", [nuevoMonto, id]);
-  generarProximoRecordatorioSiCorresponde(id); // el mes siguiente parte de este monto ajustado
-  cargarMovimientos();
-  cargarDeudas();
-  persistirTodo();
+  const { error } = await supabase.from('movimientos')
+    .update({ estado: 'Pagado', monto: nuevoMonto }).eq('id_movimiento', id);
+  if (error) { alert('Error al actualizar: ' + error.message); return; }
+
+  await generarProximoRecordatorioSiCorresponde(id);
+  await cargarMovimientos();
 }
 
-// "Suspender por este mes": no se paga ni se cobra este vencimiento puntual,
-// pero la recurrencia sigue viva y el mes siguiente se genera igual.
-function suspenderMovimiento(id) {
+async function suspenderMovimiento(id) {
   if (!confirm('Este vencimiento queda marcado como "suspendido este mes" (no se contabiliza) y el sistema va a generar igual el recordatorio del mes que viene. ¿Confirmás?')) return;
-  db.run("UPDATE movimientos SET estado = 'Suspendido' WHERE id_movimiento = ?", [id]);
-  generarProximoRecordatorioSiCorresponde(id);
-  cargarMovimientos();
-  cargarDeudas();
-  persistirTodo();
+  const { error } = await supabase.from('movimientos').update({ estado: 'Suspendido' }).eq('id_movimiento', id);
+  if (error) { alert('Error: ' + error.message); return; }
+  await generarProximoRecordatorioSiCorresponde(id);
+  await cargarMovimientos();
 }
 
-// Si el registro es un "Recurrente mensual" (sueldo, alquiler, impuesto, servicio, etc.),
-// crea automáticamente el vencimiento del mes siguiente como Pendiente, tanto si se pagó/cobró
-// como si se suspendió este mes, para que nunca se corte el recordatorio.
-function generarProximoRecordatorioSiCorresponde(idOrigen) {
-  const stmt = db.prepare(`
-    SELECT id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda,
-           monto, descripcion, recurrente, id_grupo, cuota_actual
-    FROM movimientos WHERE id_movimiento = ?`);
-  stmt.bind([idOrigen]);
-  if (!stmt.step()) { stmt.free(); return; }
-  const row = stmt.getAsObject();
-  stmt.free();
+async function generarProximoRecordatorioSiCorresponde(idOrigen) {
+  const { data: row, error } = await supabase
+    .from('movimientos')
+    .select('id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda, monto, descripcion, recurrente, id_grupo, cuota_actual')
+    .eq('id_movimiento', idOrigen).single();
+  if (error || !row || row.recurrente !== 'Servicio') return;
 
-  if (row.recurrente !== 'Servicio') return; // solo aplica a recurrentes mensuales, no a créditos ni eventuales
-
-  // Evitar duplicados: si ya existe la siguiente cuota de este grupo, no generar otra
   const siguienteCuota = (row.cuota_actual || 0) + 1;
-  const chequeo = db.prepare(`SELECT COUNT(*) AS c FROM movimientos WHERE id_grupo = ? AND cuota_actual = ?`);
-  chequeo.bind([row.id_grupo, siguienteCuota]);
-  chequeo.step();
-  const existe = chequeo.getAsObject().c > 0;
-  chequeo.free();
-  if (existe) return;
+  const { count } = await supabase
+    .from('movimientos').select('id_movimiento', { count: 'exact', head: true })
+    .eq('id_grupo', row.id_grupo).eq('cuota_actual', siguienteCuota);
+  if (count > 0) return;
 
   const fechaBase = new Date(row.fecha_hora.replace(' ', 'T'));
   fechaBase.setMonth(fechaBase.getMonth() + 1);
-  const iso = new Date(fechaBase.getTime() - fechaBase.getTimezoneOffset() * 60000).toISOString().slice(0, 16).replace('T', ' ');
 
-  db.run(`INSERT INTO movimientos
-    (id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda, monto, descripcion, recurrente, id_grupo, cuota_actual, cuota_total, estado)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Servicio', ?, ?, NULL, 'Pendiente');`,
-    [row.id_ejercicio, row.id_usuario, row.tipo, iso, row.concepto, row.id_categoria, row.codigo_moneda, row.monto, row.descripcion, row.id_grupo, siguienteCuota]);
+  await supabase.from('movimientos').insert([{
+    id_ejercicio: row.id_ejercicio, id_usuario: row.id_usuario, tipo: row.tipo,
+    fecha_hora: isoLocal(fechaBase), concepto: row.concepto, id_categoria: row.id_categoria,
+    codigo_moneda: row.codigo_moneda, monto: row.monto, descripcion: row.descripcion,
+    recurrente: 'Servicio', id_grupo: row.id_grupo, cuota_actual: siguienteCuota,
+    cuota_total: null, estado: 'Pendiente',
+  }]);
 }
 
 // ---------- LISTADO Y DASHBOARD ----------
@@ -894,7 +614,7 @@ function textoRecurrencia(row) {
   return 'Eventual';
 }
 
-function cargarMovimientos() {
+async function cargarMovimientos() {
   const ejercicio = document.getElementById('filtroEjercicio').value;
   const usuarioId = document.getElementById('filtroUsuario').value;
   const monedaFiltro = document.getElementById('filtroMoneda').value;
@@ -904,41 +624,33 @@ function cargarMovimientos() {
 
   if (!ejercicio || !usuarioId) return;
 
-  let query = `
-    SELECT m.id_movimiento, m.fecha_hora, m.tipo, m.concepto, c.nombre AS categoria,
-           m.recurrente, m.cuota_actual, m.cuota_total, m.estado, m.descripcion, m.monto,
-           mon.simbolo, m.codigo_moneda
-    FROM movimientos m
-    LEFT JOIN categorias c ON m.id_categoria = c.id_categoria
-    LEFT JOIN monedas mon ON m.codigo_moneda = mon.codigo
-    WHERE m.id_ejercicio = ? AND m.id_usuario = ?`;
-  const params = [ejercicio, usuarioId];
+  let query = supabase
+    .from('movimientos')
+    .select('id_movimiento, fecha_hora, tipo, concepto, recurrente, cuota_actual, cuota_total, estado, descripcion, monto, codigo_moneda, categorias(nombre), monedas(simbolo)')
+    .eq('id_ejercicio', ejercicio)
+    .eq('id_usuario', usuarioId)
+    .order('fecha_hora', { ascending: false });
 
-  if (monedaFiltro !== 'TODAS') { query += ' AND m.codigo_moneda = ?'; params.push(monedaFiltro); }
-  if (estadoFiltro !== 'TODOS') { query += ' AND m.estado = ?'; params.push(estadoFiltro); }
-  if (categoriaFiltro !== 'TODAS') { query += ' AND m.id_categoria = ?'; params.push(categoriaFiltro); }
-  if (mesFiltro !== 'TODOS') { query += " AND strftime('%m', m.fecha_hora) = ?"; params.push(mesFiltro); }
-  query += ' ORDER BY m.fecha_hora DESC;';
+  if (monedaFiltro !== 'TODAS') query = query.eq('codigo_moneda', monedaFiltro);
+  if (estadoFiltro !== 'TODOS') query = query.eq('estado', estadoFiltro);
+  if (categoriaFiltro !== 'TODAS') query = query.eq('id_categoria', categoriaFiltro);
+  if (mesFiltro !== 'TODOS') query = query.eq('mes', parseInt(mesFiltro));
 
-  const stmt = db.prepare(query);
-  stmt.bind(params);
+  const { data, error } = await query;
   const tbody = document.getElementById('tablaCuerpo');
   tbody.innerHTML = '';
 
-  const totales = {};
-  let filas = 0;
+  if (error) { console.error(error); document.getElementById('movEmpty').classList.remove('hidden'); return; }
 
-  while (stmt.step()) {
-    filas++;
-    const row = stmt.getAsObject();
-    if (!totales[row.codigo_moneda]) totales[row.codigo_moneda] = { Ingreso: 0, Egreso: 0, PendienteIngreso: 0, PendienteEgreso: 0, simbolo: row.simbolo };
+  const totales = {};
+  (data || []).forEach(row => {
+    const simbolo = row.monedas ? row.monedas.simbolo : '';
+    if (!totales[row.codigo_moneda]) totales[row.codigo_moneda] = { Ingreso: 0, Egreso: 0, PendienteIngreso: 0, PendienteEgreso: 0, simbolo };
     if (row.estado === 'Pagado') totales[row.codigo_moneda][row.tipo] += row.monto;
     if (row.estado === 'Pendiente') totales[row.codigo_moneda]['Pendiente' + row.tipo] += row.monto;
-    // 'Suspendido' no suma a ningún total: ese mes queda simplemente afuera
 
     const esIngreso = row.tipo === 'Ingreso';
     const accion = esIngreso ? 'Cobrar' : 'Pagar';
-
     let botones = '';
     if (row.estado === 'Pendiente') {
       botones += `<button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button>`;
@@ -952,16 +664,15 @@ function cargarMovimientos() {
     tr.innerHTML = `
       <td>${row.fecha_hora}</td>
       <td><span class="badge bg-${row.tipo.toLowerCase()}">${row.tipo}</span></td>
-      <td><strong>${row.concepto}</strong><br><small class="muted">${row.categoria || '-'}</small></td>
+      <td><strong>${row.concepto}</strong><br><small class="muted">${row.categorias ? row.categorias.nombre : '-'}</small></td>
       <td>${textoRecurrencia(row)}${row.descripcion ? `<br><small class="muted">${row.descripcion}</small>` : ''}</td>
       <td><span class="badge-estado estado-${row.estado.toLowerCase()}">${row.estado}</span></td>
-      <td style="font-weight:bold" class="${esIngreso ? 'text-success' : 'text-danger'}">${row.simbolo} ${row.monto.toFixed(2)}</td>
+      <td style="font-weight:bold" class="${esIngreso ? 'text-success' : 'text-danger'}">${simbolo} ${row.monto.toFixed(2)}</td>
       <td>${botones}</td>`;
     tbody.appendChild(tr);
-  }
-  stmt.free();
+  });
 
-  document.getElementById('movEmpty').classList.toggle('hidden', filas > 0);
+  document.getElementById('movEmpty').classList.toggle('hidden', (data || []).length > 0);
   renderDashboard(totales);
   cargarDeudas();
 }
@@ -972,7 +683,7 @@ function renderDashboard(totales) {
   const codigos = Object.keys(totales);
 
   if (codigos.length === 0) {
-    cont.innerHTML = '<div class="card"><h3>Sin datos</h3><p class="muted" style="font-size:.9rem;">No hay movimientos cargados todavía.</p></div>';
+    cont.innerHTML = '<div class="card"><h3>Sin datos</h3><p class="muted" style="font-size:.9rem;">No hay movimientos para estos filtros.</p></div>';
     return;
   }
 
@@ -988,147 +699,110 @@ function renderDashboard(totales) {
   });
 }
 
-// ---------- VISTA DE DEUDAS Y PENDIENTES DE COBRO ----------
-function cargarDeudas() {
-  const query = `
-    SELECT m.id_movimiento, m.fecha_hora, m.concepto, m.tipo, m.recurrente, m.cuota_actual, m.cuota_total,
-           m.monto, mon.simbolo, u.nombre, u.apellido
-    FROM movimientos m
-    LEFT JOIN monedas mon ON m.codigo_moneda = mon.codigo
-    LEFT JOIN usuarios u ON m.id_usuario = u.id_usuario
-    WHERE m.estado = 'Pendiente'
-    ORDER BY m.fecha_hora ASC;`;
-  const res = db.exec(query)[0];
+// ---------- VISTA DE PENDIENTES ----------
+async function cargarDeudas() {
+  const { data, error } = await supabase
+    .from('movimientos')
+    .select('id_movimiento, fecha_hora, concepto, tipo, recurrente, cuota_actual, cuota_total, monto, monedas(simbolo), usuarios(nombre, apellido)')
+    .eq('estado', 'Pendiente')
+    .order('fecha_hora', { ascending: true });
+
   const tbody = document.getElementById('tablaDeudas');
   tbody.innerHTML = '';
 
-  if (!res) {
-    document.getElementById('deudaEmpty').classList.remove('hidden');
-    return;
-  }
-  document.getElementById('deudaEmpty').classList.toggle('hidden', res.values.length > 0);
+  if (error) { console.error(error); return; }
 
-  res.values.forEach(v => {
-    const [id, fecha, concepto, tipo, recurrente, cuotaActual, cuotaTotal, monto, simbolo, nombre, apellido] = v;
-    const detalle = recurrente === 'Credito' ? `Cuota ${cuotaActual}/${cuotaTotal}` : (recurrente === 'Servicio' ? '🔁 Recurrente mensual' : 'Eventual');
-    const esIngreso = tipo === 'Ingreso';
+  document.getElementById('deudaEmpty').classList.toggle('hidden', (data || []).length > 0);
+
+  (data || []).forEach(row => {
+    const detalle = row.recurrente === 'Credito' ? `Cuota ${row.cuota_actual}/${row.cuota_total}`
+      : (row.recurrente === 'Servicio' ? '🔁 Recurrente mensual' : 'Eventual');
+    const esIngreso = row.tipo === 'Ingreso';
     const accion = esIngreso ? 'Cobrar' : 'Pagar';
-    const botonSuspender = recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${id})">Suspender este mes</button>` : '';
+    const simbolo = row.monedas ? row.monedas.simbolo : '';
+    const nombreUsuario = row.usuarios ? `${row.usuarios.nombre} ${row.usuarios.apellido}` : '';
+    const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${fecha}</td>
-      <td><strong>${concepto}</strong> <span class="badge bg-${tipo.toLowerCase()}" style="margin-left:4px;">${tipo}</span></td>
+      <td>${row.fecha_hora}</td>
+      <td><strong>${row.concepto}</strong> <span class="badge bg-${row.tipo.toLowerCase()}" style="margin-left:4px;">${row.tipo}</span></td>
       <td>${detalle}</td>
-      <td>${nombre} ${apellido}</td>
-      <td style="font-weight:bold">${simbolo} ${monto.toFixed(2)}</td>
-      <td><button class="btn small secondary" onclick="marcarComoPagado(${id})">${accion}</button> ${botonSuspender}</td>`;
+      <td>${nombreUsuario}</td>
+      <td style="font-weight:bold">${simbolo} ${row.monto.toFixed(2)}</td>
+      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender}</td>`;
     tbody.appendChild(tr);
   });
 }
 
 // ---------- ADMINISTRACIÓN (maestros) ----------
-function poblarListasAdmin() {
-  const listar = (query, elementId, render, vacio) => {
+async function poblarListasAdmin() {
+  const listar = async (query, elementId, render, vacio) => {
     const ul = document.getElementById(elementId);
+    const { data, error } = await query;
     ul.innerHTML = '';
-    const res = db.exec(query)[0];
-    if (!res) { ul.innerHTML = `<li class="muted">${vacio}</li>`; return; }
-    res.values.forEach(row => { ul.innerHTML += render(row); });
+    if (error || !data || data.length === 0) { ul.innerHTML = `<li class="muted">${vacio}</li>`; return; }
+    data.forEach(row => { ul.innerHTML += render(row); });
   };
 
-  listar("SELECT id_ejercicio FROM ejercicios ORDER BY id_ejercicio", "listaEjercicios",
-    r => `<li>${r[0]}</li>`, "Sin ejercicios cargados");
+  await listar(supabase.from('ejercicios').select('id_ejercicio').order('id_ejercicio'), 'listaEjercicios',
+    r => `<li>${r.id_ejercicio}</li>`, 'Sin ejercicios cargados');
 
-  listar("SELECT id_usuario, nombre, apellido FROM usuarios ORDER BY nombre", "listaUsuarios",
-    r => `<li>${r[1]} ${r[2]}</li>`, "Sin usuarios cargados");
+  await listar(supabase.from('usuarios').select('nombre, apellido').order('nombre'), 'listaUsuarios',
+    r => `<li>${r.nombre} ${r.apellido}</li>`, 'Sin usuarios cargados');
 
-  listar("SELECT id_categoria, nombre, tipo FROM categorias ORDER BY nombre", "listaCategorias",
-    r => `<li>${r[1]} <span class="muted">(${r[2]})</span></li>`, "Sin categorías cargadas");
+  await listar(supabase.from('categorias').select('nombre, tipo').order('nombre'), 'listaCategorias',
+    r => `<li>${r.nombre} <span class="muted">(${r.tipo})</span></li>`, 'Sin categorías cargadas');
 
-  listar("SELECT codigo, simbolo FROM monedas ORDER BY codigo", "listaMonedas",
-    r => `<li>${r[0]} <span class="muted">${r[1]}</span></li>`, "Sin monedas cargadas");
+  await listar(supabase.from('monedas').select('codigo, simbolo').order('codigo'), 'listaMonedas',
+    r => `<li>${r.codigo} <span class="muted">${r.simbolo}</span></li>`, 'Sin monedas cargadas');
 }
 
-function agregarEjercicio(e) {
+async function agregarEjercicio(e) {
   e.preventDefault();
   const val = document.getElementById('nuevoEjercicio').value.trim();
   if (!val) return;
-  try {
-    db.run("INSERT INTO ejercicios VALUES (?)", [val]);
-    e.target.reset();
-    poblarSelectoresEstructurales();
-    poblarListasAdmin();
-    persistirTodo();
-  } catch (err) { alert('Ese ejercicio ya existe.'); }
+  const { error } = await supabase.from('ejercicios').insert([{ id_ejercicio: val }]);
+  if (error) { alert('Ese ejercicio ya existe o hubo un error: ' + error.message); return; }
+  e.target.reset();
+  await poblarSelectoresEstructurales();
+  await poblarListasAdmin();
 }
 
-function agregarUsuario(e) {
+async function agregarUsuario(e) {
   e.preventDefault();
   const nombre = document.getElementById('nuevoNombre').value.trim();
   const apellido = document.getElementById('nuevoApellido').value.trim();
   if (!nombre || !apellido) return;
-  db.run("INSERT INTO usuarios (nombre, apellido) VALUES (?, ?)", [nombre, apellido]);
+  const { error } = await supabase.from('usuarios').insert([{ nombre, apellido }]);
+  if (error) { alert('Error: ' + error.message); return; }
   e.target.reset();
-  poblarSelectoresEstructurales();
-  poblarListasAdmin();
-  persistirTodo();
+  await poblarSelectoresEstructurales();
+  await poblarListasAdmin();
 }
 
-function agregarCategoria(e) {
+async function agregarCategoria(e) {
   e.preventDefault();
   const nombre = document.getElementById('nuevaCategoria').value.trim();
   const tipo = document.getElementById('nuevaCategoriaTipo').value;
   if (!nombre) return;
-  try {
-    db.run("INSERT INTO categorias (nombre, tipo) VALUES (?, ?)", [nombre, tipo]);
-    e.target.reset();
-    filtrarCategoriasPorTipo();
-    poblarSelectoresEstructurales();
-    poblarListasAdmin();
-    persistirTodo();
-  } catch (err) { alert('ERROR: esa categoría ya existe.'); }
+  const { error } = await supabase.from('categorias').insert([{ nombre, tipo }]);
+  if (error) { alert('Esa categoría ya existe o hubo un error: ' + error.message); return; }
+  e.target.reset();
+  await filtrarCategoriasPorTipo();
+  await poblarSelectoresEstructurales();
+  await poblarListasAdmin();
 }
 
-function agregarMoneda(e) {
+async function agregarMoneda(e) {
   e.preventDefault();
   const codigo = document.getElementById('nuevoCodigoMoneda').value.trim().toUpperCase();
   const simbolo = document.getElementById('nuevoSimboloMoneda').value.trim();
   if (!codigo || !simbolo) return;
-  try {
-    db.run("INSERT INTO monedas VALUES (?, ?)", [codigo, simbolo]);
-    e.target.reset();
-    poblarSelectoresEstructurales();
-    poblarListasAdmin();
-    persistirTodo();
-  } catch (err) { alert('Esa moneda ya existe.'); }
-}
-
-// ---------- PERSISTENCIA DEL ARCHIVO .sqlite ----------
-function descargarBaseDatos() {
-  const binaryArray = db.export();
-  const blob = new Blob([binaryArray], { type: 'application/octet-stream' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'gastos_hogar.sqlite';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
-function importarBaseDatos(e) {
-  const f = e.target.files[0];
-  if (!f) return;
-  if (!confirm('Esto reemplaza la base de datos actual (la que se guarda automáticamente) por el contenido de "' + f.name + '". ¿Continuar?')) {
-    e.target.value = '';
-    return;
-  }
-  const r = new FileReader();
-  r.onload = async function () {
-    const uints = new Uint8Array(r.result);
-    await initSQLite(uints);
-    await persistirTodo(); // la copia importada pasa a ser la base activa guardada
-  };
-  r.readAsArrayBuffer(f);
-  e.target.value = '';
+  const { error } = await supabase.from('monedas').insert([{ codigo, simbolo }]);
+  if (error) { alert('Esa moneda ya existe o hubo un error: ' + error.message); return; }
+  e.target.reset();
+  await poblarSelectoresEstructurales();
+  await poblarListasAdmin();
 }
 </script>
 </body>
