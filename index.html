@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Finanzas del Hogar · Supabase</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root{
     --bg:#f2f4f3;
@@ -106,6 +107,18 @@
   .punto{width:8px; height:8px; border-radius:50%; display:inline-block; background:var(--ink-soft);}
   .punto.ok{background:var(--green);}
   .punto.error{background:var(--red);}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(20,30,30,.45); z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .modal-card{
+    background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:24px; max-width:560px; width:100%; max-height:85vh; overflow:auto;
+  }
+  .variacion-sube{color:var(--red); font-weight:700;}
+  .variacion-baja{color:var(--green); font-weight:700;}
+  .btn.historial{background:transparent; color:var(--teal-dark); border:1px solid var(--line); padding:5px 10px; font-size:.75rem; width:auto;}
 
   .login-overlay{
     min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px;
@@ -230,6 +243,7 @@
   <div class="tabs">
     <div class="tab active" data-tab="movimientos" onclick="cambiarTab('movimientos')">Movimientos</div>
     <div class="tab" data-tab="deudas" onclick="cambiarTab('deudas')">Pendientes</div>
+    <div class="tab" data-tab="reportes" onclick="cambiarTab('reportes')">Reportes</div>
     <div class="tab" data-tab="admin" onclick="cambiarTab('admin')">Administración</div>
   </div>
 
@@ -353,6 +367,27 @@
     </div>
   </div>
 
+  <!-- VISTA: REPORTES -->
+  <div class="view" id="view-reportes">
+    <div class="table-container" style="margin-bottom:18px;">
+      <p class="hint" id="reportesAviso" style="margin:0;">Elegí una moneda específica en el filtro de arriba (no "Todas") para ver los reportes — sumar pesos y dólares en un mismo gráfico no tendría sentido.</p>
+    </div>
+    <div class="main-layout" id="reportesGraficos" style="grid-template-columns:1fr 1fr;">
+      <div class="table-container">
+        <h2>Ingresos por categoría</h2>
+        <p class="hint" id="reporteEstadoIngresos"></p>
+        <canvas id="chartIngresos" height="260"></canvas>
+        <div id="ingresosEmpty" class="empty-state hidden">No hay ingresos para estos filtros.</div>
+      </div>
+      <div class="table-container">
+        <h2>Egresos por categoría</h2>
+        <p class="hint" id="reporteEstadoEgresos"></p>
+        <canvas id="chartEgresos" height="260"></canvas>
+        <div id="egresosEmpty" class="empty-state hidden">No hay egresos para estos filtros.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- VISTA: ADMINISTRACIÓN -->
   <div class="view" id="view-admin">
     <div class="admin-grid">
@@ -413,6 +448,23 @@
     </div>
   </div>
 
+</div>
+
+<!-- MODAL: HISTORIAL DE UN PAGO RECURRENTE -->
+<div class="modal-overlay hidden" id="modalHistorial">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 id="tituloHistorial" style="margin:0;">Historial</h2>
+      <button class="btn small secondary" onclick="cerrarHistorial()">Cerrar ✕</button>
+    </div>
+    <canvas id="chartHistorial" height="140"></canvas>
+    <table style="margin-top:16px;">
+      <thead>
+        <tr><th>Fecha</th><th>Monto</th><th>Estado</th><th>Variación</th></tr>
+      </thead>
+      <tbody id="tablaHistorial"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
@@ -573,6 +625,7 @@ function cambiarTab(nombre) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === nombre));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + nombre));
   if (nombre === 'deudas') cargarDeudas();
+  if (nombre === 'reportes') cargarReportes();
   if (nombre === 'admin') poblarListasAdmin();
 }
 
@@ -795,7 +848,7 @@ async function cargarMovimientos() {
 
   let query = sb
     .from('movimientos')
-    .select('id_movimiento, fecha_hora, tipo, concepto, recurrente, cuota_actual, cuota_total, estado, descripcion, monto, codigo_moneda, categorias(nombre), monedas(simbolo)')
+    .select('id_movimiento, fecha_hora, tipo, concepto, recurrente, id_grupo, cuota_actual, cuota_total, estado, descripcion, monto, codigo_moneda, categorias(nombre), monedas(simbolo)')
     .eq('id_ejercicio', ejercicio)
     .eq('id_usuario', usuarioId)
     .order('fecha_hora', { ascending: false });
@@ -827,6 +880,9 @@ async function cargarMovimientos() {
         botones += `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>`;
       }
     }
+    if (row.recurrente !== 'No' && row.id_grupo) {
+      botones += `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', ${JSON.stringify(row.concepto)})">📈 Historial</button>`;
+    }
     botones += `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
 
     const tr = document.createElement('tr');
@@ -844,6 +900,7 @@ async function cargarMovimientos() {
   document.getElementById('movEmpty').classList.toggle('hidden', (data || []).length > 0);
   renderDashboard(totales);
   cargarDeudas();
+  cargarReportes();
 }
 
 function renderDashboard(totales) {
@@ -872,7 +929,7 @@ function renderDashboard(totales) {
 async function cargarDeudas() {
   const { data, error } = await sb
     .from('movimientos')
-    .select('id_movimiento, fecha_hora, concepto, tipo, recurrente, cuota_actual, cuota_total, monto, monedas(simbolo), usuarios(nombre, apellido)')
+    .select('id_movimiento, fecha_hora, concepto, tipo, recurrente, id_grupo, cuota_actual, cuota_total, monto, monedas(simbolo), usuarios(nombre, apellido)')
     .eq('estado', 'Pendiente')
     .order('fecha_hora', { ascending: true });
 
@@ -891,6 +948,7 @@ async function cargarDeudas() {
     const simbolo = row.monedas ? row.monedas.simbolo : '';
     const nombreUsuario = row.usuarios ? `${row.usuarios.nombre} ${row.usuarios.apellido}` : '';
     const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
+    const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', ${JSON.stringify(row.concepto)})">📈 Historial</button>` : '';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${row.fecha_hora}</td>
@@ -898,7 +956,7 @@ async function cargarDeudas() {
       <td>${detalle}</td>
       <td>${nombreUsuario}</td>
       <td style="font-weight:bold">${simbolo} ${row.monto.toFixed(2)}</td>
-      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender}</td>`;
+      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender} ${botonHistorial}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -972,6 +1030,160 @@ async function agregarMoneda(e) {
   e.target.reset();
   await poblarSelectoresEstructurales();
   await poblarListasAdmin();
+}
+
+// ---------- REPORTES: TORTA DE INGRESOS/EGRESOS POR CATEGORÍA ----------
+const PALETA_COLORES = ['#0f6b63', '#c98a2c', '#b8433a', '#1f8a5c', '#5b6b6c', '#7a5cbf', '#2f8fb0', '#c9576b', '#8a9a3c', '#a3742c'];
+let chartIngresos = null;
+let chartEgresos = null;
+
+async function cargarReportes() {
+  if (!document.getElementById('view-reportes').classList.contains('active')) return;
+
+  const ejercicio = document.getElementById('filtroEjercicio').value;
+  const usuarioId = document.getElementById('filtroUsuario').value;
+  const monedaFiltro = document.getElementById('filtroMoneda').value;
+  const estadoFiltro = document.getElementById('filtroEstado').value;
+  const categoriaFiltro = document.getElementById('filtroCategoria').value;
+  const mesFiltro = document.getElementById('filtroMes').value;
+
+  const aviso = document.getElementById('reportesAviso');
+  const graficos = document.getElementById('reportesGraficos');
+
+  if (!ejercicio || !usuarioId) return;
+
+  if (monedaFiltro === 'TODAS') {
+    aviso.classList.remove('hidden');
+    graficos.classList.add('hidden');
+    return;
+  }
+  aviso.classList.add('hidden');
+  graficos.classList.remove('hidden');
+
+  // Si el filtro de Estado está en "Todos", un reporte de torta no puede sumar
+  // Pagado + Pendiente + Suspendido a la vez (no tendría sentido financiero),
+  // así que por defecto se arma sobre lo efectivamente Pagado.
+  const estadoParaReporte = estadoFiltro === 'TODOS' ? 'Pagado' : estadoFiltro;
+  document.getElementById('reporteEstadoIngresos').textContent = `Basado en movimientos en estado "${estadoParaReporte}"`;
+  document.getElementById('reporteEstadoEgresos').textContent = `Basado en movimientos en estado "${estadoParaReporte}"`;
+
+  let query = sb
+    .from('movimientos')
+    .select('tipo, monto, categorias(nombre)')
+    .eq('id_ejercicio', ejercicio)
+    .eq('id_usuario', usuarioId)
+    .eq('codigo_moneda', monedaFiltro)
+    .eq('estado', estadoParaReporte);
+
+  if (categoriaFiltro !== 'TODAS') query = query.eq('id_categoria', categoriaFiltro);
+  if (mesFiltro !== 'TODOS') query = query.eq('mes', parseInt(mesFiltro));
+
+  const { data, error } = await query;
+  if (error) { console.error(error); return; }
+
+  const porCategoria = { Ingreso: {}, Egreso: {} };
+  (data || []).forEach(row => {
+    const nombreCat = row.categorias ? row.categorias.nombre : 'Sin categoría';
+    porCategoria[row.tipo][nombreCat] = (porCategoria[row.tipo][nombreCat] || 0) + row.monto;
+  });
+
+  chartIngresos = dibujarTorta('chartIngresos', chartIngresos, porCategoria.Ingreso, 'ingresosEmpty');
+  chartEgresos = dibujarTorta('chartEgresos', chartEgresos, porCategoria.Egreso, 'egresosEmpty');
+}
+
+function dibujarTorta(idCanvas, instanciaPrevia, datosPorCategoria, idVacio) {
+  const etiquetas = Object.keys(datosPorCategoria);
+  const valores = Object.values(datosPorCategoria);
+
+  if (instanciaPrevia) instanciaPrevia.destroy();
+  document.getElementById(idVacio).classList.toggle('hidden', etiquetas.length > 0);
+  if (etiquetas.length === 0) return null;
+
+  const ctx = document.getElementById(idCanvas).getContext('2d');
+  return new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: etiquetas,
+      datasets: [{ data: valores, backgroundColor: etiquetas.map((_, i) => PALETA_COLORES[i % PALETA_COLORES.length]) }],
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = ctx.dataset.data.reduce((a, b) => a + b, 0);
+              const pct = ((ctx.raw / total) * 100).toFixed(1);
+              return `${ctx.label}: ${ctx.raw.toFixed(2)} (${pct}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+// ---------- HISTORIAL DE EVOLUCIÓN DE UN PAGO RECURRENTE ----------
+let chartHistorial = null;
+
+async function verHistorial(idGrupo, concepto) {
+  const { data, error } = await sb
+    .from('movimientos')
+    .select('fecha_hora, monto, estado, cuota_actual, cuota_total, monedas(simbolo)')
+    .eq('id_grupo', idGrupo)
+    .order('fecha_hora', { ascending: true });
+
+  if (error) { alert('No se pudo cargar el historial: ' + error.message); return; }
+
+  document.getElementById('tituloHistorial').textContent = 'Historial de "' + concepto + '"';
+
+  const tbody = document.getElementById('tablaHistorial');
+  tbody.innerHTML = '';
+  const simbolo = data.length && data[0].monedas ? data[0].monedas.simbolo : '';
+
+  data.forEach((fila, i) => {
+    let variacionTexto = '—';
+    let claseVariacion = '';
+    if (i > 0) {
+      const anterior = data[i - 1].monto;
+      const variacionPct = ((fila.monto - anterior) / anterior) * 100;
+      claseVariacion = variacionPct > 0 ? 'variacion-sube' : (variacionPct < 0 ? 'variacion-baja' : '');
+      const signo = variacionPct > 0 ? '+' : '';
+      variacionTexto = `${signo}${variacionPct.toFixed(1)}%`;
+    }
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${fila.fecha_hora}</td>
+      <td>${simbolo} ${fila.monto.toFixed(2)}</td>
+      <td><span class="badge-estado estado-${fila.estado.toLowerCase()}">${fila.estado}</span></td>
+      <td class="${claseVariacion}">${variacionTexto}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  if (chartHistorial) chartHistorial.destroy();
+  const ctx = document.getElementById('chartHistorial').getContext('2d');
+  chartHistorial = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.map(f => f.fecha_hora.slice(0, 10)),
+      datasets: [{
+        label: 'Monto',
+        data: data.map(f => f.monto),
+        borderColor: '#0f6b63',
+        backgroundColor: 'rgba(15,107,99,.12)',
+        tension: 0.25,
+        fill: true,
+        pointRadius: 4,
+      }],
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: false } } },
+  });
+
+  document.getElementById('modalHistorial').classList.remove('hidden');
+}
+
+function cerrarHistorial() {
+  document.getElementById('modalHistorial').classList.add('hidden');
 }
 </script>
 </body>
