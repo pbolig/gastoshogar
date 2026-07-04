@@ -477,6 +477,48 @@
   </div>
 </div>
 
+<!-- MODAL: EDITAR MOVIMIENTO -->
+<div class="modal-overlay hidden" id="modalEditar">
+  <div class="modal-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="margin:0;">Editar movimiento</h2>
+      <button class="btn small secondary" onclick="cerrarEditar()">Cerrar ✕</button>
+    </div>
+    <form id="formEditar" onsubmit="guardarEdicion(event)">
+      <div class="form-group">
+        <label for="editConcepto">Concepto</label>
+        <input type="text" id="editConcepto" required>
+      </div>
+      <div class="row2">
+        <div class="form-group">
+          <label for="editCategoria">Categoría</label>
+          <select id="editCategoria" required></select>
+        </div>
+        <div class="form-group">
+          <label for="editMoneda">Moneda</label>
+          <select id="editMoneda" required></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="editMonto">Monto de este registro puntual</label>
+        <input type="number" id="editMonto" step="0.01" min="0.01" required>
+      </div>
+      <div class="form-group">
+        <label for="editDescripcion">Descripción</label>
+        <textarea id="editDescripcion" rows="2"></textarea>
+      </div>
+      <div class="form-group hidden" id="editAplicarSerieGroup">
+        <label style="display:flex; align-items:flex-start; gap:8px; text-transform:none; font-weight:400; font-size:.85rem;">
+          <input type="checkbox" id="editAplicarSerie" style="width:auto; margin-top:2px;">
+          <span id="editAplicarSerieTexto">Aplicar concepto, categoría, moneda y descripción a toda la serie recurrente</span>
+        </label>
+        <div class="hint">El monto de este pago puntual queda sin cambios en el resto de la serie, para no perder el historial de ajustes.</div>
+      </div>
+      <button class="btn" type="submit">Guardar cambios</button>
+    </form>
+  </div>
+</div>
+
 <script>
 /* =========================================================================
    CONEXIÓN A SUPABASE
@@ -941,6 +983,7 @@ async function cargarMovimientos() {
     if (row.recurrente !== 'No' && row.id_grupo) {
       botones += `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>`;
     }
+    botones += `<button class="btn historial" onclick="abrirEditar(${row.id_movimiento})">✏️ Editar</button>`;
     botones += `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
 
     const tr = document.createElement('tr');
@@ -1007,6 +1050,7 @@ async function cargarDeudas() {
     const nombreUsuario = row.usuarios ? `${row.usuarios.nombre} ${row.usuarios.apellido}` : '';
     const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
     const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>` : '';
+    const botonEditar = `<button class="btn historial" onclick="abrirEditar(${row.id_movimiento})">✏️ Editar</button>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${row.fecha_hora}</td>
@@ -1014,7 +1058,7 @@ async function cargarDeudas() {
       <td>${detalle}</td>
       <td>${nombreUsuario}</td>
       <td style="font-weight:bold">${simbolo} ${row.monto.toFixed(2)}</td>
-      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender} ${botonHistorial}</td>`;
+      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender} ${botonHistorial} ${botonEditar}</td>`;
     tbody.appendChild(tr);
   });
 }
@@ -1242,6 +1286,91 @@ async function verHistorial(idGrupo, concepto) {
 
 function cerrarHistorial() {
   document.getElementById('modalHistorial').classList.add('hidden');
+}
+
+// ---------- EDITAR UN MOVIMIENTO ----------
+let editandoId = null;
+let editandoIdGrupo = null;
+
+async function abrirEditar(id) {
+  const { data: fila, error } = await sb.from('movimientos').select('*').eq('id_movimiento', id).single();
+  if (error) { alert('Error: ' + error.message); return; }
+
+  editandoId = id;
+  editandoIdGrupo = fila.id_grupo;
+
+  document.getElementById('editConcepto').value = fila.concepto;
+  document.getElementById('editMonto').value = fila.monto;
+  document.getElementById('editDescripcion').value = fila.descripcion || '';
+
+  const [{ data: categorias }, { data: monedas }] = await Promise.all([
+    sb.from('categorias').select('id_categoria, nombre, tipo').order('nombre'),
+    sb.from('monedas').select('codigo, simbolo').order('codigo'),
+  ]);
+
+  const selCat = document.getElementById('editCategoria');
+  selCat.innerHTML = '';
+  categorias.filter(c => c.tipo === fila.tipo || c.tipo === 'Ambos').forEach(c => selCat.add(new Option(c.nombre, c.id_categoria)));
+  selCat.value = fila.id_categoria;
+
+  const selMon = document.getElementById('editMoneda');
+  selMon.innerHTML = '';
+  monedas.forEach(m => selMon.add(new Option(`${m.codigo} (${m.simbolo})`, m.codigo)));
+  selMon.value = fila.codigo_moneda;
+
+  const grupoInfo = document.getElementById('editAplicarSerieGroup');
+  document.getElementById('editAplicarSerie').checked = false;
+  if (fila.recurrente !== 'No' && fila.id_grupo) {
+    const { count } = await sb.from('movimientos').select('id_movimiento', { count: 'exact', head: true }).eq('id_grupo', fila.id_grupo);
+    document.getElementById('editAplicarSerieTexto').textContent =
+      `Aplicar concepto, categoría, moneda y descripción a toda la serie recurrente (${count} registros)`;
+    grupoInfo.classList.remove('hidden');
+  } else {
+    grupoInfo.classList.add('hidden');
+  }
+
+  document.getElementById('modalEditar').classList.remove('hidden');
+}
+
+function cerrarEditar() {
+  document.getElementById('modalEditar').classList.add('hidden');
+  editandoId = null;
+  editandoIdGrupo = null;
+}
+
+async function guardarEdicion(e) {
+  e.preventDefault();
+
+  const camposDescriptivos = {
+    concepto: document.getElementById('editConcepto').value.trim(),
+    id_categoria: parseInt(document.getElementById('editCategoria').value),
+    codigo_moneda: document.getElementById('editMoneda').value,
+    descripcion: document.getElementById('editDescripcion').value.trim(),
+  };
+  const monto = parseFloat(document.getElementById('editMonto').value);
+
+  if (!camposDescriptivos.concepto || isNaN(monto) || monto <= 0) {
+    alert('Revisá los datos: el concepto y el monto son obligatorios.');
+    return;
+  }
+
+  const aplicarASerie = !document.getElementById('editAplicarSerieGroup').classList.contains('hidden')
+    && document.getElementById('editAplicarSerie').checked;
+
+  if (aplicarASerie) {
+    // Concepto/categoría/moneda/descripción se corrigen en TODA la serie...
+    const { error: errSerie } = await sb.from('movimientos').update(camposDescriptivos).eq('id_grupo', editandoIdGrupo);
+    if (errSerie) { alert('Error al guardar: ' + errSerie.message); return; }
+    // ...pero el monto de este pago puntual se actualiza solo, sin tocar el historial de los demás.
+    const { error: errMonto } = await sb.from('movimientos').update({ monto }).eq('id_movimiento', editandoId);
+    if (errMonto) { alert('Error al guardar: ' + errMonto.message); return; }
+  } else {
+    const { error } = await sb.from('movimientos').update({ ...camposDescriptivos, monto }).eq('id_movimiento', editandoId);
+    if (error) { alert('Error al guardar: ' + error.message); return; }
+  }
+
+  cerrarEditar();
+  await cargarMovimientos();
 }
 </script>
 </body>
