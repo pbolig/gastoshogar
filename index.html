@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finanzas del Hogar ¬∑ Supabase</title>
+<title>Finanzas del Hogar °§ Supabase</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -119,6 +119,11 @@
   .btn.login-google{background:#fff; color:var(--ink); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; gap:10px; width:100%; margin-bottom:10px;}
   .btn.login-google:hover{background:#f5f5f5;}
   .btn.login-passkey{width:100%;}
+  .separador-login{display:flex; align-items:center; gap:10px; margin:18px 0; color:var(--ink-soft); font-size:.75rem; text-transform:uppercase; letter-spacing:.4px;}
+  .separador-login::before, .separador-login::after{content:''; flex:1; height:1px; background:var(--line);}
+  .login-card .form-group{text-align:left;}
+  .fila-botones-email{display:flex; gap:8px;}
+  .fila-botones-email .btn{width:100%;}
 </style>
 </head>
 <body>
@@ -127,13 +132,31 @@
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <h1>Finanzas del Hogar</h1>
-    <p class="hint">Inici√° sesi√≥n para ver y registrar los movimientos.</p>
+    <p class="hint">Inici®¢ sesi®Æn para ver y registrar los movimientos.</p>
     <button class="btn login-google" onclick="iniciarSesionGoogle()">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5 12.7 4.5 3.5 13.7 3.5 25S12.7 45.5 24 45.5c11.3 0 20.5-9.2 20.5-20.5 0-1.4-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 45.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.3 0-9.7-3.5-11.3-8.4l-6.6 5.1C9.5 41 16.2 45.5 24 45.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.9 2.5-2.5 4.6-4.6 6.1l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.4-.1-2.7-.4-4z"/></svg>
-      Iniciar sesi√≥n con Google
+      Iniciar sesi®Æn con Google
     </button>
-    <button class="btn secondary login-passkey" onclick="iniciarSesionPasskey()">üîê Iniciar sesi√≥n con Face ID / huella</button>
-    <p class="hint" style="margin-top:16px;">Si es tu primer ingreso en este dispositivo, us√° Google. Despu√©s vas a poder activar Face ID/huella desde Administraci√≥n.</p>
+    <button class="btn secondary login-passkey" onclick="iniciarSesionPasskey()">?? Iniciar sesi®Æn con Face ID / huella</button>
+
+    <div class="separador-login">o con email y contrase?a</div>
+
+    <form onsubmit="return false;">
+      <div class="form-group">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">Contrase?a</label>
+        <input type="password" id="loginPassword" placeholder="M®™nimo 6 caracteres" autocomplete="current-password">
+      </div>
+      <div class="fila-botones-email">
+        <button class="btn secondary" type="button" onclick="ingresarConEmail()">Ingresar</button>
+        <button class="btn" type="button" onclick="registrarseConEmail()">Crear cuenta</button>
+      </div>
+    </form>
+
+    <p class="hint" style="margin-top:16px;">Si es tu primer ingreso en este dispositivo, us®¢ Google o cre®¢ una cuenta con email. Despu®¶s vas a poder activar Face ID/huella desde Administraci®Æn.</p>
   </div>
 </div>
 
@@ -142,12 +165,12 @@
   <div class="header">
     <div>
       <h1>Finanzas del Hogar</h1>
-      <div class="sub estado-conexion"><span class="punto" id="puntoConexion"></span><span id="estadoConexion">Conectando con Supabase‚Ä¶</span></div>
+      <div class="sub estado-conexion"><span class="punto" id="puntoConexion"></span><span id="estadoConexion">Conectando con Supabase°≠</span></div>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
       <span class="muted" id="usuarioLogueado" style="font-size:.82rem;"></span>
-      <button class="btn secondary" style="width:auto;" onclick="cargarTodo()">üîÑ Actualizar</button>
-      <button class="btn secondary" style="width:auto;" onclick="cerrarSesion()">Cerrar sesi√≥n</button>
+      <button class="btn secondary" style="width:auto;" onclick="cargarTodo()">?? Actualizar</button>
+      <button class="btn secondary" style="width:auto;" onclick="cerrarSesion()">Cerrar sesi®Æn</button>
     </div>
   </div>
 
@@ -180,7 +203,7 @@
       </select>
     </div>
     <div class="field">
-      <label for="filtroCategoria">Categor√≠a</label>
+      <label for="filtroCategoria">Categor®™a</label>
       <select id="filtroCategoria" onchange="cargarMovimientos()">
         <option value="TODAS">Todas</option>
       </select>
@@ -207,7 +230,7 @@
   <div class="tabs">
     <div class="tab active" data-tab="movimientos" onclick="cambiarTab('movimientos')">Movimientos</div>
     <div class="tab" data-tab="deudas" onclick="cambiarTab('deudas')">Pendientes</div>
-    <div class="tab" data-tab="admin" onclick="cambiarTab('admin')">Administraci√≥n</div>
+    <div class="tab" data-tab="admin" onclick="cambiarTab('admin')">Administraci®Æn</div>
   </div>
 
   <!-- VISTA: MOVIMIENTOS -->
@@ -236,7 +259,7 @@
 
         <div class="row2">
           <div class="form-group">
-            <label for="categoria">Categor√≠a</label>
+            <label for="categoria">Categor®™a</label>
             <select id="categoria" required></select>
           </div>
           <div class="form-group">
@@ -251,29 +274,29 @@
         </div>
 
         <div class="form-group">
-          <label for="descripcion">Descripci√≥n</label>
+          <label for="descripcion">Descripci®Æn</label>
           <textarea id="descripcion" rows="2" placeholder="Detalle opcional"></textarea>
         </div>
 
         <div class="form-group">
           <label for="recurrente">Recurrencia</label>
           <select id="recurrente" onchange="toggleCamposRecurrencia()">
-            <option value="No">√önico (eventual)</option>
+            <option value="No">®≤nico (eventual)</option>
             <option value="Servicio">Recurrente mensual (sueldo, alquiler, impuesto, servicio, etc.)</option>
-            <option value="Credito">Cr√©dito en cuotas (solo egresos)</option>
+            <option value="Credito">Cr®¶dito en cuotas (solo egresos)</option>
           </select>
         </div>
 
         <div id="campoCuotas" class="form-group hidden">
           <label for="totalCuotas">Cantidad de cuotas</label>
           <input type="number" id="totalCuotas" min="2" value="2">
-          <div class="hint">Se generar√° una cuota por mes, comenzando en la fecha indicada.</div>
+          <div class="hint">Se generar®¢ una cuota por mes, comenzando en la fecha indicada.</div>
         </div>
 
         <div id="campoMesesServicio" class="form-group hidden">
           <label for="mesesServicio">Meses a generar por adelantado</label>
           <input type="number" id="mesesServicio" min="1" value="1">
-          <div class="hint">Al marcar un vencimiento como pagado/cobrado, el sistema genera autom√°ticamente el del mes siguiente como <strong>pendiente</strong>. Vas a poder "suspender" un mes puntual sin cortar la recurrencia.</div>
+          <div class="hint">Al marcar un vencimiento como pagado/cobrado, el sistema genera autom®¢ticamente el del mes siguiente como <strong>pendiente</strong>. Vas a poder "suspender" un mes puntual sin cortar la recurrencia.</div>
         </div>
 
         <div id="campoEstadoInicial" class="form-group">
@@ -294,7 +317,7 @@
             <tr>
               <th>Fecha y hora</th>
               <th>Tipo</th>
-              <th>Concepto / Categor√≠a</th>
+              <th>Concepto / Categor®™a</th>
               <th>Recurrencia</th>
               <th>Estado</th>
               <th>Monto</th>
@@ -312,7 +335,7 @@
   <div class="view" id="view-deudas">
     <div class="table-container">
       <h2>Pendientes de cobro y de pago</h2>
-      <p class="hint" style="margin-bottom:14px;">Ac√° aparece todo lo que todav√≠a no se sald√≥: cuotas de cr√©dito, servicios/impuestos, y tambi√©n ingresos recurrentes (como un sueldo) que todav√≠a no cobraste. Marcalos cuando los canceles/cobres, o "suspend√©" un mes puntual sin cortar la recurrencia.</p>
+      <p class="hint" style="margin-bottom:14px;">Ac®¢ aparece todo lo que todav®™a no se sald®Æ: cuotas de cr®¶dito, servicios/impuestos, y tambi®¶n ingresos recurrentes (como un sueldo) que todav®™a no cobraste. Marcalos cuando los canceles/cobres, o "suspend®¶" un mes puntual sin cortar la recurrencia.</p>
       <table>
         <thead>
           <tr>
@@ -326,11 +349,11 @@
         </thead>
         <tbody id="tablaDeudas"></tbody>
       </table>
-      <div id="deudaEmpty" class="empty-state hidden">No hay pendientes. üéâ</div>
+      <div id="deudaEmpty" class="empty-state hidden">No hay pendientes. ??</div>
     </div>
   </div>
 
-  <!-- VISTA: ADMINISTRACI√ìN -->
+  <!-- VISTA: ADMINISTRACI®ÆN -->
   <div class="view" id="view-admin">
     <div class="admin-grid">
 
@@ -356,16 +379,16 @@
       </div>
 
       <div class="admin-block">
-        <h3>Categor√≠as</h3>
+        <h3>Categor®™as</h3>
         <ul id="listaCategorias"></ul>
         <form onsubmit="agregarCategoria(event)">
-          <input type="text" id="nuevaCategoria" placeholder="Nombre de categor√≠a" required>
+          <input type="text" id="nuevaCategoria" placeholder="Nombre de categor®™a" required>
           <select id="nuevaCategoriaTipo" style="margin-top:8px;">
             <option value="Ambos">Ingreso y Egreso</option>
             <option value="Ingreso">Solo Ingreso</option>
             <option value="Egreso">Solo Egreso</option>
           </select>
-          <button class="btn ghost" style="margin-top:8px;" type="submit">+ Agregar categor√≠a</button>
+          <button class="btn ghost" style="margin-top:8px;" type="submit">+ Agregar categor®™a</button>
         </form>
       </div>
 
@@ -374,8 +397,8 @@
         <ul id="listaMonedas"></ul>
         <form onsubmit="agregarMoneda(event)">
           <div class="row2">
-            <input type="text" id="nuevoCodigoMoneda" placeholder="C√≥digo (USD)" maxlength="6" required>
-            <input type="text" id="nuevoSimboloMoneda" placeholder="S√≠mbolo (u$s)" required>
+            <input type="text" id="nuevoCodigoMoneda" placeholder="C®Ædigo (USD)" maxlength="6" required>
+            <input type="text" id="nuevoSimboloMoneda" placeholder="S®™mbolo (u$s)" required>
           </div>
           <button class="btn ghost" style="margin-top:8px;" type="submit">+ Agregar moneda</button>
         </form>
@@ -383,8 +406,8 @@
 
       <div class="admin-block">
         <h3>Seguridad</h3>
-        <p class="hint" style="margin-bottom:12px;">Registr√° este dispositivo para poder entrar la pr√≥xima vez con Face ID o huella, sin pasar por Google.</p>
-        <button class="btn ghost" onclick="registrarPasskey()">üîê Registrar Face ID / huella en este dispositivo</button>
+        <p class="hint" style="margin-bottom:12px;">Registr®¢ este dispositivo para poder entrar la pr®Æxima vez con Face ID o huella, sin pasar por Google.</p>
+        <button class="btn ghost" onclick="registrarPasskey()">?? Registrar Face ID / huella en este dispositivo</button>
       </div>
 
     </div>
@@ -394,14 +417,14 @@
 
 <script>
 /* =========================================================================
-   CONEXI√ìN A SUPABASE
-   Reemplaz√° estos dos valores por los de tu proyecto:
-   Supabase ‚Üí Settings ‚Üí API Keys ‚Üí "Project URL" y clave p√∫blica (anon/publishable).
+   CONEXI®ÆN A SUPABASE
+   Reemplaz®¢ estos dos valores por los de tu proyecto:
+   Supabase °˙ Settings °˙ API Keys °˙ "Project URL" y clave p®≤blica (anon/publishable).
    ========================================================================= */
-const SUPABASE_URL = 'https://vpppbksvcsjbgnbdbowv.supabase.co';
+const SUPABASE_URL = 'https://vpppbksvcsjbgnbdbowv.sb.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_h70CBZApaWN-N7hE0q8AWQ_idPFhXw2';
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: { experimental: { passkey: true } }, // habilita signInWithPasskey / registerPasskey
 });
 
@@ -409,11 +432,11 @@ window.onload = async function () {
   establecerFechaActual();
 
   // Reacciona a login/logout, incluido el regreso del redirect de Google
-  supabase.auth.onAuthStateChange((_evento, session) => {
+  sb.auth.onAuthStateChange((_evento, session) => {
     if (session) mostrarApp(session); else mostrarLogin();
   });
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await sb.auth.getSession();
   if (session) await mostrarApp(session); else mostrarLogin();
 };
 
@@ -431,42 +454,73 @@ async function mostrarApp(session) {
 }
 
 async function iniciarSesionGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href },
   });
-  if (error) alert('No se pudo iniciar sesi√≥n con Google: ' + error.message);
+  if (error) alert('No se pudo iniciar sesi®Æn con Google: ' + error.message);
+}
+
+async function ingresarConEmail() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { alert('Complet®¢ email y contrase?a.'); return; }
+
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    if (error.code === 'email_not_confirmed') {
+      alert('Confirm®¢ tu email antes de ingresar: te enviamos un link de confirmaci®Æn al crear la cuenta.');
+    } else {
+      alert('No se pudo ingresar: ' + error.message);
+    }
+  }
+}
+
+async function registrarseConEmail() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  if (!email || !password) { alert('Complet®¢ email y contrase?a.'); return; }
+  if (password.length < 6) { alert('La contrase?a tiene que tener al menos 6 caracteres.'); return; }
+
+  const { data, error } = await sb.auth.signUp({ email, password });
+  if (error) { alert('No se pudo crear la cuenta: ' + error.message); return; }
+
+  if (data.session) {
+    // El proyecto tiene la confirmaci®Æn de email desactivada: queda logueado directo
+    return;
+  }
+  alert('Cuenta creada. Revis®¢ tu email (' + email + ') y hac®¶ clic en el link de confirmaci®Æn antes de ingresar.');
 }
 
 async function iniciarSesionPasskey() {
-  const { error } = await supabase.auth.signInWithPasskey();
+  const { error } = await sb.auth.signInWithPasskey();
   if (error) {
     if (error.code === 'webauthn_credential_not_found' || error.code === 'passkey_disabled') {
-      alert('Todav√≠a no hay un Face ID/huella registrado en este dispositivo. Inici√° sesi√≥n primero con Google y despu√©s registralo desde Administraci√≥n ‚Üí Seguridad.');
+      alert('Todav®™a no hay un Face ID/huella registrado en este dispositivo. Inici®¢ sesi®Æn primero con Google o con email, y despu®¶s registralo desde Administraci®Æn °˙ Seguridad.');
     } else {
-      alert('No se pudo iniciar sesi√≥n: ' + error.message);
+      alert('No se pudo iniciar sesi®Æn: ' + error.message);
     }
   }
 }
 
 async function registrarPasskey() {
-  const { data, error } = await supabase.auth.registerPasskey();
+  const { data, error } = await sb.auth.registerPasskey();
   if (error) { alert('No se pudo registrar: ' + error.message); return; }
-  alert('Listo, qued√≥ registrado como "' + (data.friendly_name || 'este dispositivo') + '". La pr√≥xima vez pod√©s entrar con Face ID/huella.');
+  alert('Listo, qued®Æ registrado como "' + (data.friendly_name || 'este dispositivo') + '". La pr®Æxima vez pod®¶s entrar con Face ID/huella.');
 }
 
 async function cerrarSesion() {
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   mostrarLogin();
 }
 
 async function verificarConexion() {
   const punto = document.getElementById('puntoConexion');
   const texto = document.getElementById('estadoConexion');
-  const { error } = await supabase.from('ejercicios').select('id_ejercicio').limit(1);
+  const { error } = await sb.from('ejercicios').select('id_ejercicio').limit(1);
   if (error) {
     punto.className = 'punto error';
-    texto.textContent = 'Sin conexi√≥n a Supabase: revis√° SUPABASE_URL / SUPABASE_ANON_KEY';
+    texto.textContent = 'Sin conexi®Æn a Supabase: revis®¢ SUPABASE_URL / SUPABASE_ANON_KEY';
     console.error(error);
   } else {
     punto.className = 'punto ok';
@@ -486,7 +540,7 @@ function establecerFechaActual() {
   document.getElementById('fechaHora').value = ahora.toISOString().slice(0, 16);
 }
 
-// ---------- UI: TABS Y CAMPOS DIN√ÅMICOS ----------
+// ---------- UI: TABS Y CAMPOS DIN®¢MICOS ----------
 function cambiarTab(nombre) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === nombre));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + nombre));
@@ -504,7 +558,7 @@ function toggleCamposRecurrencia() {
 async function filtrarCategoriasPorTipo() {
   const tipo = document.getElementById('tipo').value;
   const select = document.getElementById('categoria');
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('categorias')
     .select('id_categoria, nombre, tipo')
     .order('nombre');
@@ -526,10 +580,10 @@ async function poblarSelectoresEstructurales() {
   };
 
   const [ejercicios, usuarios, categorias, monedas] = await Promise.all([
-    supabase.from('ejercicios').select('id_ejercicio').order('id_ejercicio'),
-    supabase.from('usuarios').select('id_usuario, nombre, apellido').order('nombre'),
-    supabase.from('categorias').select('id_categoria, nombre').order('nombre'),
-    supabase.from('monedas').select('codigo, simbolo').order('codigo'),
+    sb.from('ejercicios').select('id_ejercicio').order('id_ejercicio'),
+    sb.from('usuarios').select('id_usuario, nombre, apellido').order('nombre'),
+    sb.from('categorias').select('id_categoria, nombre').order('nombre'),
+    sb.from('monedas').select('codigo, simbolo').order('codigo'),
   ]);
 
   if (ejercicios.error || usuarios.error || categorias.error || monedas.error) {
@@ -571,11 +625,11 @@ async function insertarMovimiento(e) {
   const estadoInicial = document.getElementById('estadoInicial').value;
 
   if (!ejercicio || !usuarioId) {
-    alert('Eleg√≠ un ejercicio contable y un usuario en la barra superior antes de registrar el movimiento.');
+    alert('Eleg®™ un ejercicio contable y un usuario en la barra superior antes de registrar el movimiento.');
     return;
   }
   if (recurrente === 'Credito' && tipo === 'Ingreso') {
-    alert('El "Cr√©dito en cuotas" es solo para egresos. Para un ingreso recurrente (como un sueldo), eleg√≠ "Recurrente mensual".');
+    alert('El "Cr®¶dito en cuotas" es solo para egresos. Para un ingreso recurrente (como un sueldo), eleg®™ "Recurrente mensual".');
     return;
   }
 
@@ -596,7 +650,7 @@ async function insertarMovimiento(e) {
         cuota_actual: i, cuota_total: totalCuotas, estado: i === 1 ? estadoInicial : 'Pendiente',
       });
     }
-    const { error } = await supabase.from('movimientos').insert(filas);
+    const { error } = await sb.from('movimientos').insert(filas);
     if (error) { alert('Error al guardar: ' + error.message); return; }
 
   } else if (recurrente === 'Servicio') {
@@ -611,13 +665,13 @@ async function insertarMovimiento(e) {
         cuota_actual: i, cuota_total: null, estado: i === 1 ? estadoInicial : 'Pendiente',
       });
     }
-    const { data, error } = await supabase.from('movimientos').insert(filas).select();
+    const { data, error } = await sb.from('movimientos').insert(filas).select();
     if (error) { alert('Error al guardar: ' + error.message); return; }
     const ultima = data[data.length - 1];
     if (ultima.estado === 'Pagado') await generarProximoRecordatorioSiCorresponde(ultima.id_movimiento);
 
   } else {
-    const { error } = await supabase.from('movimientos').insert([{ ...base, fecha_hora: fechaHora, recurrente: 'No', estado: 'Pagado' }]);
+    const { error } = await sb.from('movimientos').insert([{ ...base, fecha_hora: fechaHora, recurrente: 'No', estado: 'Pagado' }]);
     if (error) { alert('Error al guardar: ' + error.message); return; }
   }
 
@@ -635,25 +689,25 @@ function isoLocal(fecha) {
 }
 
 async function eliminarMovimiento(id) {
-  if (!confirm('¬øEliminar este registro de la base de datos?')) return;
-  const { error } = await supabase.from('movimientos').delete().eq('id_movimiento', id);
+  if (!confirm('?Eliminar este registro de la base de datos?')) return;
+  const { error } = await sb.from('movimientos').delete().eq('id_movimiento', id);
   if (error) { alert('Error al borrar: ' + error.message); return; }
   await cargarMovimientos();
 }
 
 async function marcarComoPagado(id) {
-  const { data: row, error: e1 } = await supabase
+  const { data: row, error: e1 } = await sb
     .from('movimientos').select('monto, tipo, concepto, codigo_moneda')
     .eq('id_movimiento', id).single();
   if (e1) { alert('Error: ' + e1.message); return; }
 
   const accion = row.tipo === 'Ingreso' ? 'cobrar' : 'pagar';
-  const ingresado = prompt(`Monto a ${accion} de "${row.concepto}" (${row.codigo_moneda}).\nSi cambi√≥ por alg√∫n ajuste, corregilo ac√°:`, row.monto);
+  const ingresado = prompt(`Monto a ${accion} de "${row.concepto}" (${row.codigo_moneda}).\nSi cambi®Æ por alg®≤n ajuste, corregilo ac®¢:`, row.monto);
   if (ingresado === null) return;
   const nuevoMonto = parseFloat(String(ingresado).replace(',', '.'));
-  if (isNaN(nuevoMonto) || nuevoMonto <= 0) { alert('Ingres√° un monto v√°lido mayor a 0.'); return; }
+  if (isNaN(nuevoMonto) || nuevoMonto <= 0) { alert('Ingres®¢ un monto v®¢lido mayor a 0.'); return; }
 
-  const { error } = await supabase.from('movimientos')
+  const { error } = await sb.from('movimientos')
     .update({ estado: 'Pagado', monto: nuevoMonto }).eq('id_movimiento', id);
   if (error) { alert('Error al actualizar: ' + error.message); return; }
 
@@ -662,22 +716,22 @@ async function marcarComoPagado(id) {
 }
 
 async function suspenderMovimiento(id) {
-  if (!confirm('Este vencimiento queda marcado como "suspendido este mes" (no se contabiliza) y el sistema va a generar igual el recordatorio del mes que viene. ¬øConfirm√°s?')) return;
-  const { error } = await supabase.from('movimientos').update({ estado: 'Suspendido' }).eq('id_movimiento', id);
+  if (!confirm('Este vencimiento queda marcado como "suspendido este mes" (no se contabiliza) y el sistema va a generar igual el recordatorio del mes que viene. ?Confirm®¢s?')) return;
+  const { error } = await sb.from('movimientos').update({ estado: 'Suspendido' }).eq('id_movimiento', id);
   if (error) { alert('Error: ' + error.message); return; }
   await generarProximoRecordatorioSiCorresponde(id);
   await cargarMovimientos();
 }
 
 async function generarProximoRecordatorioSiCorresponde(idOrigen) {
-  const { data: row, error } = await supabase
+  const { data: row, error } = await sb
     .from('movimientos')
     .select('id_ejercicio, id_usuario, tipo, fecha_hora, concepto, id_categoria, codigo_moneda, monto, descripcion, recurrente, id_grupo, cuota_actual')
     .eq('id_movimiento', idOrigen).single();
   if (error || !row || row.recurrente !== 'Servicio') return;
 
   const siguienteCuota = (row.cuota_actual || 0) + 1;
-  const { count } = await supabase
+  const { count } = await sb
     .from('movimientos').select('id_movimiento', { count: 'exact', head: true })
     .eq('id_grupo', row.id_grupo).eq('cuota_actual', siguienteCuota);
   if (count > 0) return;
@@ -685,7 +739,7 @@ async function generarProximoRecordatorioSiCorresponde(idOrigen) {
   const fechaBase = new Date(row.fecha_hora.replace(' ', 'T'));
   fechaBase.setMonth(fechaBase.getMonth() + 1);
 
-  await supabase.from('movimientos').insert([{
+  await sb.from('movimientos').insert([{
     id_ejercicio: row.id_ejercicio, id_usuario: row.id_usuario, tipo: row.tipo,
     fecha_hora: isoLocal(fechaBase), concepto: row.concepto, id_categoria: row.id_categoria,
     codigo_moneda: row.codigo_moneda, monto: row.monto, descripcion: row.descripcion,
@@ -697,7 +751,7 @@ async function generarProximoRecordatorioSiCorresponde(idOrigen) {
 // ---------- LISTADO Y DASHBOARD ----------
 function textoRecurrencia(row) {
   if (row.recurrente === 'Credito') return `Cuota ${row.cuota_actual}/${row.cuota_total}`;
-  if (row.recurrente === 'Servicio') return 'üîÅ Recurrente mensual (recordatorio autom√°tico)';
+  if (row.recurrente === 'Servicio') return '?? Recurrente mensual (recordatorio autom®¢tico)';
   return 'Eventual';
 }
 
@@ -711,7 +765,7 @@ async function cargarMovimientos() {
 
   if (!ejercicio || !usuarioId) return;
 
-  let query = supabase
+  let query = sb
     .from('movimientos')
     .select('id_movimiento, fecha_hora, tipo, concepto, recurrente, cuota_actual, cuota_total, estado, descripcion, monto, codigo_moneda, categorias(nombre), monedas(simbolo)')
     .eq('id_ejercicio', ejercicio)
@@ -788,7 +842,7 @@ function renderDashboard(totales) {
 
 // ---------- VISTA DE PENDIENTES ----------
 async function cargarDeudas() {
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('movimientos')
     .select('id_movimiento, fecha_hora, concepto, tipo, recurrente, cuota_actual, cuota_total, monto, monedas(simbolo), usuarios(nombre, apellido)')
     .eq('estado', 'Pendiente')
@@ -803,7 +857,7 @@ async function cargarDeudas() {
 
   (data || []).forEach(row => {
     const detalle = row.recurrente === 'Credito' ? `Cuota ${row.cuota_actual}/${row.cuota_total}`
-      : (row.recurrente === 'Servicio' ? 'üîÅ Recurrente mensual' : 'Eventual');
+      : (row.recurrente === 'Servicio' ? '?? Recurrente mensual' : 'Eventual');
     const esIngreso = row.tipo === 'Ingreso';
     const accion = esIngreso ? 'Cobrar' : 'Pagar';
     const simbolo = row.monedas ? row.monedas.simbolo : '';
@@ -821,7 +875,7 @@ async function cargarDeudas() {
   });
 }
 
-// ---------- ADMINISTRACI√ìN (maestros) ----------
+// ---------- ADMINISTRACI®ÆN (maestros) ----------
 async function poblarListasAdmin() {
   const listar = async (query, elementId, render, vacio) => {
     const ul = document.getElementById(elementId);
@@ -831,16 +885,16 @@ async function poblarListasAdmin() {
     data.forEach(row => { ul.innerHTML += render(row); });
   };
 
-  await listar(supabase.from('ejercicios').select('id_ejercicio').order('id_ejercicio'), 'listaEjercicios',
+  await listar(sb.from('ejercicios').select('id_ejercicio').order('id_ejercicio'), 'listaEjercicios',
     r => `<li>${r.id_ejercicio}</li>`, 'Sin ejercicios cargados');
 
-  await listar(supabase.from('usuarios').select('nombre, apellido').order('nombre'), 'listaUsuarios',
+  await listar(sb.from('usuarios').select('nombre, apellido').order('nombre'), 'listaUsuarios',
     r => `<li>${r.nombre} ${r.apellido}</li>`, 'Sin usuarios cargados');
 
-  await listar(supabase.from('categorias').select('nombre, tipo').order('nombre'), 'listaCategorias',
-    r => `<li>${r.nombre} <span class="muted">(${r.tipo})</span></li>`, 'Sin categor√≠as cargadas');
+  await listar(sb.from('categorias').select('nombre, tipo').order('nombre'), 'listaCategorias',
+    r => `<li>${r.nombre} <span class="muted">(${r.tipo})</span></li>`, 'Sin categor®™as cargadas');
 
-  await listar(supabase.from('monedas').select('codigo, simbolo').order('codigo'), 'listaMonedas',
+  await listar(sb.from('monedas').select('codigo, simbolo').order('codigo'), 'listaMonedas',
     r => `<li>${r.codigo} <span class="muted">${r.simbolo}</span></li>`, 'Sin monedas cargadas');
 }
 
@@ -848,7 +902,7 @@ async function agregarEjercicio(e) {
   e.preventDefault();
   const val = document.getElementById('nuevoEjercicio').value.trim();
   if (!val) return;
-  const { error } = await supabase.from('ejercicios').insert([{ id_ejercicio: val }]);
+  const { error } = await sb.from('ejercicios').insert([{ id_ejercicio: val }]);
   if (error) { alert('Ese ejercicio ya existe o hubo un error: ' + error.message); return; }
   e.target.reset();
   await poblarSelectoresEstructurales();
@@ -860,7 +914,7 @@ async function agregarUsuario(e) {
   const nombre = document.getElementById('nuevoNombre').value.trim();
   const apellido = document.getElementById('nuevoApellido').value.trim();
   if (!nombre || !apellido) return;
-  const { error } = await supabase.from('usuarios').insert([{ nombre, apellido }]);
+  const { error } = await sb.from('usuarios').insert([{ nombre, apellido }]);
   if (error) { alert('Error: ' + error.message); return; }
   e.target.reset();
   await poblarSelectoresEstructurales();
@@ -872,8 +926,8 @@ async function agregarCategoria(e) {
   const nombre = document.getElementById('nuevaCategoria').value.trim();
   const tipo = document.getElementById('nuevaCategoriaTipo').value;
   if (!nombre) return;
-  const { error } = await supabase.from('categorias').insert([{ nombre, tipo }]);
-  if (error) { alert('Esa categor√≠a ya existe o hubo un error: ' + error.message); return; }
+  const { error } = await sb.from('categorias').insert([{ nombre, tipo }]);
+  if (error) { alert('Esa categor®™a ya existe o hubo un error: ' + error.message); return; }
   e.target.reset();
   await filtrarCategoriasPorTipo();
   await poblarSelectoresEstructurales();
@@ -885,7 +939,7 @@ async function agregarMoneda(e) {
   const codigo = document.getElementById('nuevoCodigoMoneda').value.trim().toUpperCase();
   const simbolo = document.getElementById('nuevoSimboloMoneda').value.trim();
   if (!codigo || !simbolo) return;
-  const { error } = await supabase.from('monedas').insert([{ codigo, simbolo }]);
+  const { error } = await sb.from('monedas').insert([{ codigo, simbolo }]);
   if (error) { alert('Esa moneda ya existe o hubo un error: ' + error.message); return; }
   e.target.reset();
   await poblarSelectoresEstructurales();
