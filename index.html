@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Finanzas del Hogar ¡¤ Supabase</title>
+<title>Finanzas del Hogar ¡P Supabase</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -132,14 +132,14 @@
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <h1>Finanzas del Hogar</h1>
-    <p class="hint">Inici¨¢ sesi¨®n para ver y registrar los movimientos.</p>
+    <p class="hint">Inicia sesion para ver y registrar los movimientos.</p>
     <button class="btn login-google" onclick="iniciarSesionGoogle()">
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.4 29.3 35 24 35c-6.1 0-11-4.9-11-11s4.9-11 11-11c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5 12.7 4.5 3.5 13.7 3.5 25S12.7 45.5 24 45.5c11.3 0 20.5-9.2 20.5-20.5 0-1.4-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c2.8 0 5.3 1 7.3 2.7l6-6C33.9 6.5 29.2 4.5 24 4.5c-7.7 0-14.4 4.4-17.7 10.2z"/><path fill="#4CAF50" d="M24 45.5c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.4-4.5 2.2-7.2 2.2-5.3 0-9.7-3.5-11.3-8.4l-6.6 5.1C9.5 41 16.2 45.5 24 45.5z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.9 2.5-2.5 4.6-4.6 6.1l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.4-.1-2.7-.4-4z"/></svg>
-      Iniciar sesi¨®n con Google
+      Iniciar sesion con Google
     </button>
-    <button class="btn secondary login-passkey" onclick="iniciarSesionPasskey()">?? Iniciar sesi¨®n con Face ID / huella</button>
+    <button class="btn secondary login-passkey" onclick="iniciarSesionPasskey()">?? Iniciar sesion con Face ID / huella</button>
 
-    <div class="separador-login">o con email y contrase?a</div>
+    <div class="separador-login">o con email y contrasena</div>
 
     <form onsubmit="return false;">
       <div class="form-group">
@@ -147,8 +147,8 @@
         <input type="email" id="loginEmail" placeholder="tu@email.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label for="loginPassword">Contrase?a</label>
-        <input type="password" id="loginPassword" placeholder="M¨ªnimo 6 caracteres" autocomplete="current-password">
+        <label for="loginPassword">Contrasena</label>
+        <input type="password" id="loginPassword" placeholder="Minimo 6 caracteres" autocomplete="current-password">
       </div>
       <div class="fila-botones-email">
         <button class="btn secondary" type="button" onclick="ingresarConEmail()">Ingresar</button>
@@ -156,7 +156,7 @@
       </div>
     </form>
 
-    <p class="hint" style="margin-top:16px;">Si es tu primer ingreso en este dispositivo, us¨¢ Google o cre¨¢ una cuenta con email. Despu¨¦s vas a poder activar Face ID/huella desde Administraci¨®n.</p>
+    <p class="hint" style="margin-top:16px;">Si es tu primer ingreso en este dispositivo, usa Google o crea una cuenta con email. Despues vas a poder activar Face ID/huella desde Administracion.</p>
   </div>
 </div>
 
@@ -165,12 +165,12 @@
   <div class="header">
     <div>
       <h1>Finanzas del Hogar</h1>
-      <div class="sub estado-conexion"><span class="punto" id="puntoConexion"></span><span id="estadoConexion">Conectando con Supabase¡­</span></div>
+      <div class="sub estado-conexion"><span class="punto" id="puntoConexion"></span><span id="estadoConexion">Conectando con Supabase¡K</span></div>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
       <span class="muted" id="usuarioLogueado" style="font-size:.82rem;"></span>
       <button class="btn secondary" style="width:auto;" onclick="cargarTodo()">?? Actualizar</button>
-      <button class="btn secondary" style="width:auto;" onclick="cerrarSesion()">Cerrar sesi¨®n</button>
+      <button class="btn secondary" style="width:auto;" onclick="cerrarSesion()">Cerrar sesion</button>
     </div>
   </div>
 
@@ -203,7 +203,7 @@
       </select>
     </div>
     <div class="field">
-      <label for="filtroCategoria">Categor¨ªa</label>
+      <label for="filtroCategoria">Categoria</label>
       <select id="filtroCategoria" onchange="cargarMovimientos()">
         <option value="TODAS">Todas</option>
       </select>
@@ -230,7 +230,7 @@
   <div class="tabs">
     <div class="tab active" data-tab="movimientos" onclick="cambiarTab('movimientos')">Movimientos</div>
     <div class="tab" data-tab="deudas" onclick="cambiarTab('deudas')">Pendientes</div>
-    <div class="tab" data-tab="admin" onclick="cambiarTab('admin')">Administraci¨®n</div>
+    <div class="tab" data-tab="admin" onclick="cambiarTab('admin')">Administracion</div>
   </div>
 
   <!-- VISTA: MOVIMIENTOS -->
@@ -259,7 +259,7 @@
 
         <div class="row2">
           <div class="form-group">
-            <label for="categoria">Categor¨ªa</label>
+            <label for="categoria">Categoria</label>
             <select id="categoria" required></select>
           </div>
           <div class="form-group">
@@ -274,29 +274,29 @@
         </div>
 
         <div class="form-group">
-          <label for="descripcion">Descripci¨®n</label>
+          <label for="descripcion">Descripcion</label>
           <textarea id="descripcion" rows="2" placeholder="Detalle opcional"></textarea>
         </div>
 
         <div class="form-group">
           <label for="recurrente">Recurrencia</label>
           <select id="recurrente" onchange="toggleCamposRecurrencia()">
-            <option value="No">¨²nico (eventual)</option>
+            <option value="No">Unico (eventual)</option>
             <option value="Servicio">Recurrente mensual (sueldo, alquiler, impuesto, servicio, etc.)</option>
-            <option value="Credito">Cr¨¦dito en cuotas (solo egresos)</option>
+            <option value="Credito">Credito en cuotas (solo egresos)</option>
           </select>
         </div>
 
         <div id="campoCuotas" class="form-group hidden">
           <label for="totalCuotas">Cantidad de cuotas</label>
           <input type="number" id="totalCuotas" min="2" value="2">
-          <div class="hint">Se generar¨¢ una cuota por mes, comenzando en la fecha indicada.</div>
+          <div class="hint">Se generara una cuota por mes, comenzando en la fecha indicada.</div>
         </div>
 
         <div id="campoMesesServicio" class="form-group hidden">
           <label for="mesesServicio">Meses a generar por adelantado</label>
           <input type="number" id="mesesServicio" min="1" value="1">
-          <div class="hint">Al marcar un vencimiento como pagado/cobrado, el sistema genera autom¨¢ticamente el del mes siguiente como <strong>pendiente</strong>. Vas a poder "suspender" un mes puntual sin cortar la recurrencia.</div>
+          <div class="hint">Al marcar un vencimiento como pagado/cobrado, el sistema genera automaticamente el del mes siguiente como <strong>pendiente</strong>. Vas a poder "suspender" un mes puntual sin cortar la recurrencia.</div>
         </div>
 
         <div id="campoEstadoInicial" class="form-group">
@@ -317,7 +317,7 @@
             <tr>
               <th>Fecha y hora</th>
               <th>Tipo</th>
-              <th>Concepto / Categor¨ªa</th>
+              <th>Concepto / Categoria</th>
               <th>Recurrencia</th>
               <th>Estado</th>
               <th>Monto</th>
@@ -335,7 +335,7 @@
   <div class="view" id="view-deudas">
     <div class="table-container">
       <h2>Pendientes de cobro y de pago</h2>
-      <p class="hint" style="margin-bottom:14px;">Ac¨¢ aparece todo lo que todav¨ªa no se sald¨®: cuotas de cr¨¦dito, servicios/impuestos, y tambi¨¦n ingresos recurrentes (como un sueldo) que todav¨ªa no cobraste. Marcalos cuando los canceles/cobres, o "suspend¨¦" un mes puntual sin cortar la recurrencia.</p>
+      <p class="hint" style="margin-bottom:14px;">Aca aparece todo lo que todavia no se saldo: cuotas de credito, servicios/impuestos, y tambien ingresos recurrentes (como un sueldo) que todavia no cobraste. Marcalos cuando los canceles/cobres, o "suspende" un mes puntual sin cortar la recurrencia.</p>
       <table>
         <thead>
           <tr>
@@ -353,7 +353,7 @@
     </div>
   </div>
 
-  <!-- VISTA: ADMINISTRACI¨®N -->
+  <!-- VISTA: ADMINISTRACION -->
   <div class="view" id="view-admin">
     <div class="admin-grid">
 
@@ -379,16 +379,16 @@
       </div>
 
       <div class="admin-block">
-        <h3>Categor¨ªas</h3>
+        <h3>Categorias</h3>
         <ul id="listaCategorias"></ul>
         <form onsubmit="agregarCategoria(event)">
-          <input type="text" id="nuevaCategoria" placeholder="Nombre de categor¨ªa" required>
+          <input type="text" id="nuevaCategoria" placeholder="Nombre de categoria" required>
           <select id="nuevaCategoriaTipo" style="margin-top:8px;">
             <option value="Ambos">Ingreso y Egreso</option>
             <option value="Ingreso">Solo Ingreso</option>
             <option value="Egreso">Solo Egreso</option>
           </select>
-          <button class="btn ghost" style="margin-top:8px;" type="submit">+ Agregar categor¨ªa</button>
+          <button class="btn ghost" style="margin-top:8px;" type="submit">+ Agregar categoria</button>
         </form>
       </div>
 
@@ -397,8 +397,8 @@
         <ul id="listaMonedas"></ul>
         <form onsubmit="agregarMoneda(event)">
           <div class="row2">
-            <input type="text" id="nuevoCodigoMoneda" placeholder="C¨®digo (USD)" maxlength="6" required>
-            <input type="text" id="nuevoSimboloMoneda" placeholder="S¨ªmbolo (u$s)" required>
+            <input type="text" id="nuevoCodigoMoneda" placeholder="Codigo (USD)" maxlength="6" required>
+            <input type="text" id="nuevoSimboloMoneda" placeholder="Simbolo (u$s)" required>
           </div>
           <button class="btn ghost" style="margin-top:8px;" type="submit">+ Agregar moneda</button>
         </form>
@@ -406,7 +406,7 @@
 
       <div class="admin-block">
         <h3>Seguridad</h3>
-        <p class="hint" style="margin-bottom:12px;">Registr¨¢ este dispositivo para poder entrar la pr¨®xima vez con Face ID o huella, sin pasar por Google.</p>
+        <p class="hint" style="margin-bottom:12px;">Registra este dispositivo para poder entrar la proxima vez con Face ID o huella, sin pasar por Google.</p>
         <button class="btn ghost" onclick="registrarPasskey()">?? Registrar Face ID / huella en este dispositivo</button>
       </div>
 
@@ -417,9 +417,9 @@
 
 <script>
 /* =========================================================================
-   CONEXI¨®N A SUPABASE
-   Reemplaz¨¢ estos dos valores por los de tu proyecto:
-   Supabase ¡ú Settings ¡ú API Keys ¡ú "Project URL" y clave p¨²blica (anon/publishable).
+   CONEXION A SUPABASE
+   Reemplaza estos dos valores por los de tu proyecto:
+   Supabase ¡÷ Settings ¡÷ API Keys ¡÷ "Project URL" y clave publica (anon/publishable).
    ========================================================================= */
 const SUPABASE_URL = 'https://vpppbksvcsjbgnbdbowv.sb.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_h70CBZApaWN-N7hE0q8AWQ_idPFhXw2';
@@ -458,18 +458,18 @@ async function iniciarSesionGoogle() {
     provider: 'google',
     options: { redirectTo: window.location.href },
   });
-  if (error) alert('No se pudo iniciar sesi¨®n con Google: ' + error.message);
+  if (error) alert('No se pudo iniciar sesion con Google: ' + error.message);
 }
 
 async function ingresarConEmail() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if (!email || !password) { alert('Complet¨¢ email y contrase?a.'); return; }
+  if (!email || !password) { alert('Completa email y contrasena.'); return; }
 
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
     if (error.code === 'email_not_confirmed') {
-      alert('Confirm¨¢ tu email antes de ingresar: te enviamos un link de confirmaci¨®n al crear la cuenta.');
+      alert('Confirma tu email antes de ingresar: te enviamos un link de confirmacion al crear la cuenta.');
     } else {
       alert('No se pudo ingresar: ' + error.message);
     }
@@ -479,26 +479,26 @@ async function ingresarConEmail() {
 async function registrarseConEmail() {
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  if (!email || !password) { alert('Complet¨¢ email y contrase?a.'); return; }
-  if (password.length < 6) { alert('La contrase?a tiene que tener al menos 6 caracteres.'); return; }
+  if (!email || !password) { alert('Completa email y contrasena.'); return; }
+  if (password.length < 6) { alert('La contrasena tiene que tener al menos 6 caracteres.'); return; }
 
   const { data, error } = await sb.auth.signUp({ email, password });
   if (error) { alert('No se pudo crear la cuenta: ' + error.message); return; }
 
   if (data.session) {
-    // El proyecto tiene la confirmaci¨®n de email desactivada: queda logueado directo
+    // El proyecto tiene la confirmacion de email desactivada: queda logueado directo
     return;
   }
-  alert('Cuenta creada. Revis¨¢ tu email (' + email + ') y hac¨¦ clic en el link de confirmaci¨®n antes de ingresar.');
+  alert('Cuenta creada. Revisa tu email (' + email + ') y hace clic en el link de confirmacion antes de ingresar.');
 }
 
 async function iniciarSesionPasskey() {
   const { error } = await sb.auth.signInWithPasskey();
   if (error) {
     if (error.code === 'webauthn_credential_not_found' || error.code === 'passkey_disabled') {
-      alert('Todav¨ªa no hay un Face ID/huella registrado en este dispositivo. Inici¨¢ sesi¨®n primero con Google o con email, y despu¨¦s registralo desde Administraci¨®n ¡ú Seguridad.');
+      alert('Todavia no hay un Face ID/huella registrado en este dispositivo. Inicia sesion primero con Google o con email, y despues registralo desde Administracion ¡÷ Seguridad.');
     } else {
-      alert('No se pudo iniciar sesi¨®n: ' + error.message);
+      alert('No se pudo iniciar sesion: ' + error.message);
     }
   }
 }
@@ -506,7 +506,7 @@ async function iniciarSesionPasskey() {
 async function registrarPasskey() {
   const { data, error } = await sb.auth.registerPasskey();
   if (error) { alert('No se pudo registrar: ' + error.message); return; }
-  alert('Listo, qued¨® registrado como "' + (data.friendly_name || 'este dispositivo') + '". La pr¨®xima vez pod¨¦s entrar con Face ID/huella.');
+  alert('Listo, quedo registrado como "' + (data.friendly_name || 'este dispositivo') + '". La proxima vez podes entrar con Face ID/huella.');
 }
 
 async function cerrarSesion() {
@@ -520,7 +520,7 @@ async function verificarConexion() {
   const { error } = await sb.from('ejercicios').select('id_ejercicio').limit(1);
   if (error) {
     punto.className = 'punto error';
-    texto.textContent = 'Sin conexi¨®n a Supabase: revis¨¢ SUPABASE_URL / SUPABASE_ANON_KEY';
+    texto.textContent = 'Sin conexion a Supabase: revisa SUPABASE_URL / SUPABASE_ANON_KEY';
     console.error(error);
   } else {
     punto.className = 'punto ok';
@@ -540,7 +540,7 @@ function establecerFechaActual() {
   document.getElementById('fechaHora').value = ahora.toISOString().slice(0, 16);
 }
 
-// ---------- UI: TABS Y CAMPOS DIN¨¢MICOS ----------
+// ---------- UI: TABS Y CAMPOS DINAMICOS ----------
 function cambiarTab(nombre) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === nombre));
   document.querySelectorAll('.view').forEach(v => v.classList.toggle('active', v.id === 'view-' + nombre));
@@ -625,11 +625,11 @@ async function insertarMovimiento(e) {
   const estadoInicial = document.getElementById('estadoInicial').value;
 
   if (!ejercicio || !usuarioId) {
-    alert('Eleg¨ª un ejercicio contable y un usuario en la barra superior antes de registrar el movimiento.');
+    alert('Elegi un ejercicio contable y un usuario en la barra superior antes de registrar el movimiento.');
     return;
   }
   if (recurrente === 'Credito' && tipo === 'Ingreso') {
-    alert('El "Cr¨¦dito en cuotas" es solo para egresos. Para un ingreso recurrente (como un sueldo), eleg¨ª "Recurrente mensual".');
+    alert('El "Credito en cuotas" es solo para egresos. Para un ingreso recurrente (como un sueldo), elegi "Recurrente mensual".');
     return;
   }
 
@@ -702,10 +702,10 @@ async function marcarComoPagado(id) {
   if (e1) { alert('Error: ' + e1.message); return; }
 
   const accion = row.tipo === 'Ingreso' ? 'cobrar' : 'pagar';
-  const ingresado = prompt(`Monto a ${accion} de "${row.concepto}" (${row.codigo_moneda}).\nSi cambi¨® por alg¨²n ajuste, corregilo ac¨¢:`, row.monto);
+  const ingresado = prompt(`Monto a ${accion} de "${row.concepto}" (${row.codigo_moneda}).\nSi cambio por algun ajuste, corregilo aca:`, row.monto);
   if (ingresado === null) return;
   const nuevoMonto = parseFloat(String(ingresado).replace(',', '.'));
-  if (isNaN(nuevoMonto) || nuevoMonto <= 0) { alert('Ingres¨¢ un monto v¨¢lido mayor a 0.'); return; }
+  if (isNaN(nuevoMonto) || nuevoMonto <= 0) { alert('Ingresa un monto valido mayor a 0.'); return; }
 
   const { error } = await sb.from('movimientos')
     .update({ estado: 'Pagado', monto: nuevoMonto }).eq('id_movimiento', id);
@@ -716,7 +716,7 @@ async function marcarComoPagado(id) {
 }
 
 async function suspenderMovimiento(id) {
-  if (!confirm('Este vencimiento queda marcado como "suspendido este mes" (no se contabiliza) y el sistema va a generar igual el recordatorio del mes que viene. ?Confirm¨¢s?')) return;
+  if (!confirm('Este vencimiento queda marcado como "suspendido este mes" (no se contabiliza) y el sistema va a generar igual el recordatorio del mes que viene. ?Confirmas?')) return;
   const { error } = await sb.from('movimientos').update({ estado: 'Suspendido' }).eq('id_movimiento', id);
   if (error) { alert('Error: ' + error.message); return; }
   await generarProximoRecordatorioSiCorresponde(id);
@@ -751,7 +751,7 @@ async function generarProximoRecordatorioSiCorresponde(idOrigen) {
 // ---------- LISTADO Y DASHBOARD ----------
 function textoRecurrencia(row) {
   if (row.recurrente === 'Credito') return `Cuota ${row.cuota_actual}/${row.cuota_total}`;
-  if (row.recurrente === 'Servicio') return '?? Recurrente mensual (recordatorio autom¨¢tico)';
+  if (row.recurrente === 'Servicio') return '?? Recurrente mensual (recordatorio automatico)';
   return 'Eventual';
 }
 
@@ -875,7 +875,7 @@ async function cargarDeudas() {
   });
 }
 
-// ---------- ADMINISTRACI¨®N (maestros) ----------
+// ---------- ADMINISTRACION (maestros) ----------
 async function poblarListasAdmin() {
   const listar = async (query, elementId, render, vacio) => {
     const ul = document.getElementById(elementId);
@@ -892,7 +892,7 @@ async function poblarListasAdmin() {
     r => `<li>${r.nombre} ${r.apellido}</li>`, 'Sin usuarios cargados');
 
   await listar(sb.from('categorias').select('nombre, tipo').order('nombre'), 'listaCategorias',
-    r => `<li>${r.nombre} <span class="muted">(${r.tipo})</span></li>`, 'Sin categor¨ªas cargadas');
+    r => `<li>${r.nombre} <span class="muted">(${r.tipo})</span></li>`, 'Sin categorias cargadas');
 
   await listar(sb.from('monedas').select('codigo, simbolo').order('codigo'), 'listaMonedas',
     r => `<li>${r.codigo} <span class="muted">${r.simbolo}</span></li>`, 'Sin monedas cargadas');
@@ -927,7 +927,7 @@ async function agregarCategoria(e) {
   const tipo = document.getElementById('nuevaCategoriaTipo').value;
   if (!nombre) return;
   const { error } = await sb.from('categorias').insert([{ nombre, tipo }]);
-  if (error) { alert('Esa categor¨ªa ya existe o hubo un error: ' + error.message); return; }
+  if (error) { alert('Esa categoria ya existe o hubo un error: ' + error.message); return; }
   e.target.reset();
   await filtrarCategoriasPorTipo();
   await poblarSelectoresEstructurales();
