@@ -780,9 +780,46 @@ function isoLocal(fecha) {
 }
 
 async function eliminarMovimiento(id) {
-  if (!confirm('¿Eliminar este registro de la base de datos?')) return;
-  const { error } = await sb.from('movimientos').delete().eq('id_movimiento', id);
-  if (error) { alert('Error al borrar: ' + error.message); return; }
+  const { data: fila, error: errFila } = await sb
+    .from('movimientos')
+    .select('recurrente, id_grupo, concepto')
+    .eq('id_movimiento', id)
+    .single();
+  if (errFila) { alert('Error: ' + errFila.message); return; }
+
+  // Caso simple: movimiento eventual, sin serie recurrente asociada
+  if (fila.recurrente === 'No' || !fila.id_grupo) {
+    if (!confirm('¿Eliminar este registro de la base de datos?')) return;
+    const { error } = await sb.from('movimientos').delete().eq('id_movimiento', id);
+    if (error) { alert('Error al borrar: ' + error.message); return; }
+    await cargarMovimientos();
+    return;
+  }
+
+  // Es parte de una serie recurrente (servicio o crédito en cuotas):
+  // preguntar si se quiere borrar toda la serie o solo este registro puntual.
+  const { count } = await sb
+    .from('movimientos')
+    .select('id_movimiento', { count: 'exact', head: true })
+    .eq('id_grupo', fila.id_grupo);
+
+  const borrarSerieCompleta = confirm(
+    `"${fila.concepto}" es parte de una serie recurrente con ${count} registro(s) en total ` +
+    `(pasados, pendientes o futuros).\n\n` +
+    `Aceptar = eliminar TODA la serie (los ${count} registros).\n` +
+    `Cancelar = elegir eliminar solo este registro puntual.`
+  );
+
+  if (borrarSerieCompleta) {
+    if (!confirm(`Esto borra de forma permanente los ${count} registros de "${fila.concepto}". ¿Confirmás?`)) return;
+    const { error } = await sb.from('movimientos').delete().eq('id_grupo', fila.id_grupo);
+    if (error) { alert('Error al borrar la serie: ' + error.message); return; }
+  } else {
+    if (!confirm('¿Eliminar únicamente este registro puntual? El resto de la serie sigue existiendo.')) return;
+    const { error } = await sb.from('movimientos').delete().eq('id_movimiento', id);
+    if (error) { alert('Error al borrar: ' + error.message); return; }
+  }
+
   await cargarMovimientos();
 }
 
