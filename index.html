@@ -73,6 +73,12 @@
   .main-layout{display:grid; grid-template-columns:340px 1fr; gap:22px; align-items:start;}
   @media (max-width:960px){.main-layout{grid-template-columns:1fr;}}
 
+  .reportes-grid{display:grid; grid-template-columns:1fr 1fr; gap:22px; align-items:start;}
+  @media (max-width:800px){.reportes-grid{grid-template-columns:1fr;}}
+
+  .tabla-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  .tabla-scroll table{min-width:640px;}
+
   form.panel, .table-container, .admin-block{
     background:var(--card); padding:20px; border-radius:var(--radius); box-shadow:var(--shadow); border:1px solid var(--line);
   }
@@ -326,6 +332,7 @@
 
       <div class="table-container">
         <h2>Movimientos registrados</h2>
+        <div class="tabla-scroll">
         <table>
           <thead>
             <tr>
@@ -340,6 +347,7 @@
           </thead>
           <tbody id="tablaCuerpo"></tbody>
         </table>
+        </div>
         <div id="movEmpty" class="empty-state hidden">No hay movimientos para los filtros seleccionados.</div>
       </div>
     </div>
@@ -350,6 +358,7 @@
     <div class="table-container">
       <h2>Pendientes de cobro y de pago</h2>
       <p class="hint" style="margin-bottom:14px;">Acá aparece todo lo que todavía no se saldó: cuotas de crédito, servicios/impuestos, y también ingresos recurrentes (como un sueldo) que todavía no cobraste. Marcalos cuando los canceles/cobres, o "suspendé" un mes puntual sin cortar la recurrencia.</p>
+      <div class="tabla-scroll">
       <table>
         <thead>
           <tr>
@@ -363,6 +372,7 @@
         </thead>
         <tbody id="tablaDeudas"></tbody>
       </table>
+      </div>
       <div id="deudaEmpty" class="empty-state hidden">No hay pendientes. 🎉</div>
     </div>
   </div>
@@ -372,7 +382,7 @@
     <div class="table-container" style="margin-bottom:18px;">
       <p class="hint" id="reportesAviso" style="margin:0;">Elegí una moneda específica en el filtro de arriba (no "Todas") para ver los reportes — sumar pesos y dólares en un mismo gráfico no tendría sentido.</p>
     </div>
-    <div class="main-layout" id="reportesGraficos" style="grid-template-columns:1fr 1fr;">
+    <div class="reportes-grid" id="reportesGraficos">
       <div class="table-container">
         <h2>Ingresos por categoría</h2>
         <p class="hint" id="reporteEstadoIngresos"></p>
@@ -830,6 +840,17 @@ async function generarProximoRecordatorioSiCorresponde(idOrigen) {
 }
 
 // ---------- LISTADO Y DASHBOARD ----------
+// Escapa comillas, backslashes y HTML antes de embeber un texto dentro de un
+// atributo onclick="..." (usado por el botón de Historial).
+function escaparParaAtributo(texto) {
+  return String(texto)
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 function textoRecurrencia(row) {
   if (row.recurrente === 'Credito') return `Cuota ${row.cuota_actual}/${row.cuota_total}`;
   if (row.recurrente === 'Servicio') return '🔁 Recurrente mensual (recordatorio automático)';
@@ -881,7 +902,7 @@ async function cargarMovimientos() {
       }
     }
     if (row.recurrente !== 'No' && row.id_grupo) {
-      botones += `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', ${JSON.stringify(row.concepto)})">📈 Historial</button>`;
+      botones += `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>`;
     }
     botones += `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
 
@@ -948,7 +969,7 @@ async function cargarDeudas() {
     const simbolo = row.monedas ? row.monedas.simbolo : '';
     const nombreUsuario = row.usuarios ? `${row.usuarios.nombre} ${row.usuarios.apellido}` : '';
     const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
-    const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', ${JSON.stringify(row.concepto)})">📈 Historial</button>` : '';
+    const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>` : '';
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${row.fecha_hora}</td>
