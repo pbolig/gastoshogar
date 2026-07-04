@@ -443,6 +443,7 @@ window.onload = async function () {
 function mostrarLogin() {
   document.getElementById('loginOverlay').classList.remove('hidden');
   document.getElementById('appContainer').classList.add('hidden');
+  detenerControlInactividad();
 }
 
 async function mostrarApp(session) {
@@ -451,6 +452,33 @@ async function mostrarApp(session) {
   document.getElementById('usuarioLogueado').textContent = session.user.email || session.user.phone || '';
   await verificarConexion();
   await cargarTodo();
+  iniciarControlInactividad();
+}
+
+// ---------- CIERRE DE SESIÓN AUTOMÁTICO POR INACTIVIDAD ----------
+const MINUTOS_INACTIVIDAD = 20;
+let temporizadorInactividad = null;
+const eventosDeActividad = ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+
+function iniciarControlInactividad() {
+  eventosDeActividad.forEach(ev => document.addEventListener(ev, reiniciarTemporizadorInactividad));
+  reiniciarTemporizadorInactividad();
+}
+
+function detenerControlInactividad() {
+  eventosDeActividad.forEach(ev => document.removeEventListener(ev, reiniciarTemporizadorInactividad));
+  clearTimeout(temporizadorInactividad);
+}
+
+function reiniciarTemporizadorInactividad() {
+  clearTimeout(temporizadorInactividad);
+  temporizadorInactividad = setTimeout(cerrarSesionPorInactividad, MINUTOS_INACTIVIDAD * 60 * 1000);
+}
+
+async function cerrarSesionPorInactividad() {
+  await sb.auth.signOut();
+  mostrarLogin();
+  alert(`Cerramos tu sesión automáticamente por ${MINUTOS_INACTIVIDAD} minutos de inactividad. Volvé a iniciar sesión para seguir.`);
 }
 
 async function iniciarSesionGoogle() {
