@@ -1051,6 +1051,7 @@ async function cargarDeudas() {
     const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
     const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>` : '';
     const botonEditar = `<button class="btn historial" onclick="abrirEditar(${row.id_movimiento})">✏️ Editar</button>`;
+    const botonBorrar = `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${row.fecha_hora}</td>
@@ -1058,7 +1059,7 @@ async function cargarDeudas() {
       <td>${detalle}</td>
       <td>${nombreUsuario}</td>
       <td style="font-weight:bold">${simbolo} ${row.monto.toFixed(2)}</td>
-      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender} ${botonHistorial} ${botonEditar}</td>`;
+      <td><button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button> ${botonSuspender} ${botonHistorial} ${botonEditar} ${botonBorrar}</td>`;
     tbody.appendChild(tr);
   });
 }
