@@ -99,6 +99,10 @@
   .badge-estado{padding:3px 9px; border-radius:20px; font-size:.68rem; font-weight:700;}
   .estado-pagado{background:var(--green-soft); color:var(--green);}
   .estado-pendiente{background:var(--amber-soft); color:var(--amber);}
+  .estado-vencido{background:var(--red-soft); color:var(--red);}
+  tr.fila-pendiente td{background:var(--amber-soft);}
+  tr.fila-vencida td{background:var(--red-soft);}
+  tr.fila-pendiente:hover td, tr.fila-vencida:hover td{filter:brightness(0.97);}
   .estado-suspendido{background:#e9edec; color:var(--ink-soft);}
   .text-success{color:var(--green);}
   .text-danger{color:var(--red);}
@@ -973,6 +977,9 @@ async function cargarMovimientos() {
 
     const esIngreso = row.tipo === 'Ingreso';
     const accion = esIngreso ? 'Cobrar' : 'Pagar';
+    const estaVencido = row.estado === 'Pendiente' && new Date(row.fecha_hora.replace(' ', 'T')) < new Date();
+    const estadoMostrado = estaVencido ? 'Vencido' : row.estado;
+    const claseEstado = estaVencido ? 'vencido' : row.estado.toLowerCase();
     let botones = '';
     if (row.estado === 'Pendiente') {
       botones += `<button class="btn small secondary" onclick="marcarComoPagado(${row.id_movimiento})">${accion}</button>`;
@@ -987,12 +994,14 @@ async function cargarMovimientos() {
     botones += `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
 
     const tr = document.createElement('tr');
+    if (estaVencido) tr.classList.add('fila-vencida');
+    else if (row.estado === 'Pendiente') tr.classList.add('fila-pendiente');
     tr.innerHTML = `
       <td>${row.fecha_hora}</td>
       <td><span class="badge bg-${row.tipo.toLowerCase()}">${row.tipo}</span></td>
       <td><strong>${row.concepto}</strong><br><small class="muted">${row.categorias ? row.categorias.nombre : '-'}</small></td>
       <td>${textoRecurrencia(row)}${row.descripcion ? `<br><small class="muted">${row.descripcion}</small>` : ''}</td>
-      <td><span class="badge-estado estado-${row.estado.toLowerCase()}">${row.estado}</span></td>
+      <td><span class="badge-estado estado-${claseEstado}">${estaVencido ? '⚠️ ' : ''}${estadoMostrado}</span></td>
       <td style="font-weight:bold" class="${esIngreso ? 'text-success' : 'text-danger'}">${simbolo} ${row.monto.toFixed(2)}</td>
       <td>${botones}</td>`;
     tbody.appendChild(tr);
@@ -1048,13 +1057,15 @@ async function cargarDeudas() {
     const accion = esIngreso ? 'Cobrar' : 'Pagar';
     const simbolo = row.monedas ? row.monedas.simbolo : '';
     const nombreUsuario = row.usuarios ? `${row.usuarios.nombre} ${row.usuarios.apellido}` : '';
+    const estaVencido = new Date(row.fecha_hora.replace(' ', 'T')) < new Date();
     const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
     const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>` : '';
     const botonEditar = `<button class="btn historial" onclick="abrirEditar(${row.id_movimiento})">✏️ Editar</button>`;
     const botonBorrar = `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
     const tr = document.createElement('tr');
+    tr.classList.add(estaVencido ? 'fila-vencida' : 'fila-pendiente');
     tr.innerHTML = `
-      <td>${row.fecha_hora}</td>
+      <td>${row.fecha_hora}${estaVencido ? '<br><span class="badge-estado estado-vencido">⚠️ Vencido</span>' : ''}</td>
       <td><strong>${row.concepto}</strong> <span class="badge bg-${row.tipo.toLowerCase()}" style="margin-left:4px;">${row.tipo}</span></td>
       <td>${detalle}</td>
       <td>${nombreUsuario}</td>
@@ -1080,8 +1091,8 @@ async function poblarListasAdmin() {
   await listar(sb.from('usuarios').select('nombre, apellido').order('nombre'), 'listaUsuarios',
     r => `<li>${r.nombre} ${r.apellido}</li>`, 'Sin usuarios cargados');
 
-  await listar(sb.from('categorias').select('nombre, tipo').order('nombre'), 'listaCategorias',
-    r => `<li>${r.nombre} <span class="muted">(${r.tipo})</span></li>`, 'Sin categorías cargadas');
+  await listar(sb.from('categorias').select('id_categoria, nombre, tipo').order('nombre'), 'listaCategorias',
+    r => `<li><span>${r.nombre} <span class="muted">(${r.tipo})</span></span><button class="btn small danger" style="width:auto;" onclick="eliminarCategoria(${r.id_categoria}, '${escaparParaAtributo(r.nombre)}')">✕</button></li>`, 'Sin categorías cargadas');
 
   await listar(sb.from('monedas').select('codigo, simbolo').order('codigo'), 'listaMonedas',
     r => `<li>${r.codigo} <span class="muted">${r.simbolo}</span></li>`, 'Sin monedas cargadas');
@@ -1118,6 +1129,27 @@ async function agregarCategoria(e) {
   const { error } = await sb.from('categorias').insert([{ nombre, tipo }]);
   if (error) { alert('Esa categoría ya existe o hubo un error: ' + error.message); return; }
   e.target.reset();
+  await filtrarCategoriasPorTipo();
+  await poblarSelectoresEstructurales();
+  await poblarListasAdmin();
+}
+
+async function eliminarCategoria(id, nombre) {
+  const { count } = await sb
+    .from('movimientos')
+    .select('id_movimiento', { count: 'exact', head: true })
+    .eq('id_categoria', id);
+
+  if (count > 0) {
+    alert(`No se puede eliminar "${nombre}": está usada en ${count} movimiento(s). Editá esos movimientos y asignales otra categoría antes de borrar esta.`);
+    return;
+  }
+
+  if (!confirm(`¿Eliminar la categoría "${nombre}"? No tiene movimientos asociados.`)) return;
+
+  const { error } = await sb.from('categorias').delete().eq('id_categoria', id);
+  if (error) { alert('Error al eliminar: ' + error.message); return; }
+
   await filtrarCategoriasPorTipo();
   await poblarSelectoresEstructurales();
   await poblarListasAdmin();
