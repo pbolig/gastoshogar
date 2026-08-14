@@ -21,6 +21,8 @@
     --green-soft:#e5f4ec;
     --red-soft:#fbeae8;
     --amber-soft:#fbf1e0;
+    --orange:#c9611a;
+    --orange-soft:#fce6d2;
     --radius:10px;
     --shadow:0 1px 2px rgba(20,30,30,.06), 0 6px 16px rgba(20,30,30,.05);
   }
@@ -100,9 +102,12 @@
   .estado-pagado{background:var(--green-soft); color:var(--green);}
   .estado-pendiente{background:var(--amber-soft); color:var(--amber);}
   .estado-vencido{background:var(--red-soft); color:var(--red);}
-  tr.fila-pendiente td{background:var(--amber-soft);}
+  .estado-mes-actual{background:var(--amber-soft); color:var(--amber);}
+  .estado-mes-siguiente{background:var(--orange-soft); color:var(--orange);}
+  tr.fila-pendiente td, tr.fila-mes-actual td{background:var(--amber-soft);}
   tr.fila-vencida td{background:var(--red-soft);}
-  tr.fila-pendiente:hover td, tr.fila-vencida:hover td{filter:brightness(0.97);}
+  tr.fila-mes-siguiente td{background:var(--orange-soft);}
+  tr.fila-pendiente:hover td, tr.fila-vencida:hover td, tr.fila-mes-actual:hover td, tr.fila-mes-siguiente:hover td{filter:brightness(0.97);}
   .estado-suspendido{background:#e9edec; color:var(--ink-soft);}
   .text-success{color:var(--green);}
   .text-danger{color:var(--red);}
@@ -934,6 +939,15 @@ function escaparParaAtributo(texto) {
     .replace(/>/g, '&gt;');
 }
 
+// Convierte 'YYYY-MM-DD HH:MM[:SS]' (como se guarda en la base) a 'DD/MM/YYYY HH:MM' para mostrar
+function formatearFecha(fechaHora) {
+  if (!fechaHora) return '';
+  const [fecha, hora] = fechaHora.split(' ');
+  const [anio, mes, dia] = fecha.split('-');
+  const horaCorta = hora ? hora.slice(0, 5) : '';
+  return `${dia}/${mes}/${anio}${horaCorta ? ' ' + horaCorta : ''}`;
+}
+
 function textoRecurrencia(row) {
   if (row.recurrente === 'Credito') return `Cuota ${row.cuota_actual}/${row.cuota_total}`;
   if (row.recurrente === 'Servicio') return '🔁 Recurrente mensual (recordatorio automático)';
@@ -997,7 +1011,7 @@ async function cargarMovimientos() {
     if (estaVencido) tr.classList.add('fila-vencida');
     else if (row.estado === 'Pendiente') tr.classList.add('fila-pendiente');
     tr.innerHTML = `
-      <td>${row.fecha_hora}</td>
+      <td>${formatearFecha(row.fecha_hora)}</td>
       <td><span class="badge bg-${row.tipo.toLowerCase()}">${row.tipo}</span></td>
       <td><strong>${row.concepto}</strong><br><small class="muted">${row.categorias ? row.categorias.nombre : '-'}</small></td>
       <td>${textoRecurrencia(row)}${row.descripcion ? `<br><small class="muted">${row.descripcion}</small>` : ''}</td>
@@ -1048,24 +1062,46 @@ async function cargarDeudas() {
 
   if (error) { console.error(error); return; }
 
-  document.getElementById('deudaEmpty').classList.toggle('hidden', (data || []).length > 0);
+  // Clasificar cada pendiente: Vencido > Mes en curso > Mes siguiente > Más adelante
+  const ahora = new Date();
+  const mismoMes = (d1, d2) => d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
+  const refMesSiguiente = new Date(ahora.getFullYear(), ahora.getMonth() + 1, 1);
 
-  (data || []).forEach(row => {
+  const clasificados = (data || []).map(row => {
+    const fecha = new Date(row.fecha_hora.replace(' ', 'T'));
+    let categoria, prioridad;
+    if (fecha < ahora) { categoria = 'vencido'; prioridad = 0; }
+    else if (mismoMes(fecha, ahora)) { categoria = 'mesActual'; prioridad = 1; }
+    else if (mismoMes(fecha, refMesSiguiente)) { categoria = 'mesSiguiente'; prioridad = 2; }
+    else { categoria = 'masAdelante'; prioridad = 3; }
+    return { row, categoria, prioridad, fecha };
+  });
+
+  // Orden pedido: primero vencidos, después mes en curso, después mes siguiente (y por último el resto)
+  clasificados.sort((a, b) => a.prioridad - b.prioridad || a.fecha - b.fecha);
+
+  document.getElementById('deudaEmpty').classList.toggle('hidden', clasificados.length > 0);
+
+  const CLASE_FILA = { vencido: 'fila-vencida', mesActual: 'fila-mes-actual', mesSiguiente: 'fila-mes-siguiente', masAdelante: '' };
+  const ETIQUETA = { vencido: '⚠️ Vencido', mesActual: '🟡 Este mes', mesSiguiente: '🟠 Próximo mes', masAdelante: '' };
+  const CLASE_BADGE = { vencido: 'estado-vencido', mesActual: 'estado-mes-actual', mesSiguiente: 'estado-mes-siguiente', masAdelante: '' };
+
+  clasificados.forEach(({ row, categoria }) => {
     const detalle = row.recurrente === 'Credito' ? `Cuota ${row.cuota_actual}/${row.cuota_total}`
       : (row.recurrente === 'Servicio' ? '🔁 Recurrente mensual' : 'Eventual');
     const esIngreso = row.tipo === 'Ingreso';
     const accion = esIngreso ? 'Cobrar' : 'Pagar';
     const simbolo = row.monedas ? row.monedas.simbolo : '';
     const nombreUsuario = row.usuarios ? `${row.usuarios.nombre} ${row.usuarios.apellido}` : '';
-    const estaVencido = new Date(row.fecha_hora.replace(' ', 'T')) < new Date();
     const botonSuspender = row.recurrente === 'Servicio' ? `<button class="btn small secondary" onclick="suspenderMovimiento(${row.id_movimiento})">Suspender este mes</button>` : '';
     const botonHistorial = (row.recurrente !== 'No' && row.id_grupo) ? `<button class="btn historial" onclick="verHistorial('${row.id_grupo}', '${escaparParaAtributo(row.concepto)}')">📈 Historial</button>` : '';
     const botonEditar = `<button class="btn historial" onclick="abrirEditar(${row.id_movimiento})">✏️ Editar</button>`;
     const botonBorrar = `<button class="btn small danger" onclick="eliminarMovimiento(${row.id_movimiento})">Borrar</button>`;
+    const etiqueta = ETIQUETA[categoria] ? `<br><span class="badge-estado ${CLASE_BADGE[categoria]}">${ETIQUETA[categoria]}</span>` : '';
     const tr = document.createElement('tr');
-    tr.classList.add(estaVencido ? 'fila-vencida' : 'fila-pendiente');
+    if (CLASE_FILA[categoria]) tr.classList.add(CLASE_FILA[categoria]);
     tr.innerHTML = `
-      <td>${row.fecha_hora}${estaVencido ? '<br><span class="badge-estado estado-vencido">⚠️ Vencido</span>' : ''}</td>
+      <td>${formatearFecha(row.fecha_hora)}${etiqueta}</td>
       <td><strong>${row.concepto}</strong> <span class="badge bg-${row.tipo.toLowerCase()}" style="margin-left:4px;">${row.tipo}</span></td>
       <td>${detalle}</td>
       <td>${nombreUsuario}</td>
@@ -1288,7 +1324,7 @@ async function verHistorial(idGrupo, concepto) {
     }
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${fila.fecha_hora}</td>
+      <td>${formatearFecha(fila.fecha_hora)}</td>
       <td>${simbolo} ${fila.monto.toFixed(2)}</td>
       <td><span class="badge-estado estado-${fila.estado.toLowerCase()}">${fila.estado}</span></td>
       <td class="${claseVariacion}">${variacionTexto}</td>`;
