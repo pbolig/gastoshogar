@@ -1,0 +1,18 @@
+name: Mantener despierta la base de Supabase
+
+on:
+  schedule:
+    # Corre cada 3 días a las 09:00 UTC (bien por debajo del límite de 7 días de inactividad)
+    - cron: '0 9 */3 * *'
+  workflow_dispatch: {}   # también se puede disparar a mano desde la pestaña Actions
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hacer una consulta liviana a la API de Supabase
+        run: |
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" \
+            "https://vpppbksvcsjbgnbdbowv.supabase.co/rest/v1/ejercicios?select=id_ejercicio&limit=1" \
+            -H "apikey: sb_publishable_h70CBZApaWN-N7hE0q8AWQ_idPFhXw2" \
+            -H "Authorization: Bearer sb_publishable_h70CBZApaWN-N7hE0q8AWQ_idPFhXw2"
